@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>myPay Verification — Otorisasi Mutasi QRIS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4 font-sans">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+        <div class="bg-gradient-to-r from-slate-900 to-indigo-900 p-5 text-white text-center">
+            <span class="px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-[10px] font-extrabold uppercase tracking-widest">Terminal Otorisasi Bendahara</span>
+            <h1 class="text-lg font-extrabold mt-2">Verifikasi Mutasi QRIS</h1>
+            <p id="txIdLabel" class="text-xs text-indigo-200 font-mono mt-0.5">-</p>
+        </div>
+
+        <div class="p-6 space-y-4 text-center">
+            <div class="bg-slate-50 border rounded-2xl p-3">
+                <p class="text-xs text-slate-500">Nominal Masuk yang Harus Cocok</p>
+                <p id="amountLabel" class="text-3xl font-extrabold text-slate-900 mt-0.5">Rp 0</p>
+                <p id="studentLabel" class="text-xs font-bold text-indigo-600 mt-1">-</p>
+            </div>
+
+            <div class="flex flex-col items-center">
+                <div id="qrBox" class="p-2.5 bg-white border-2 border-slate-200 rounded-2xl shadow-sm"></div>
+            </div>
+
+            <div id="actionBox" class="space-y-2.5 text-left">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-600">Kanal Pembayaran Masuk:</label>
+                    <select id="channelSelect" class="w-full mt-1 p-2.5 rounded-xl border text-xs font-bold bg-slate-50">
+                        <option value="QRIS - GoPay">QRIS — GoPay</option>
+                        <option value="QRIS - DANA">QRIS — DANA</option>
+                        <option value="QRIS - OVO">QRIS — OVO</option>
+                        <option value="QRIS - BCA Mobile">QRIS — BCA Mobile</option>
+                        <option value="QRIS - BRI BRImo">QRIS — BRI BRImo</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-extrabold text-rose-700">PIN Otorisasi Operator / Bendahara:</label>
+                    <input type="password" id="operatorPinInput" maxlength="6" placeholder="Masukkan PIN Bendahara" class="w-full mt-1 p-2.5 rounded-xl border-2 border-rose-200 focus:border-rose-500 outline-none text-sm font-extrabold tracking-widest text-center">
+                </div>
+                <p id="errText" class="hidden text-xs font-bold text-red-600 text-center"></p>
+                <button onclick="confirmPayment()" id="btnPay" class="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-lg shadow-emerald-600/25 transition">
+                    Sahkan Mutasi & Kirim Saldo ✓
+                </button>
+            </div>
+
+            <div id="paidBadge" class="hidden p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 space-y-1">
+                <p class="font-extrabold text-sm">✅ Terverifikasi & Lunas!</p>
+                <p class="text-xs">Webhook bertanda tangan SHA-512 telah dikirim ke myKantin.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const txId = new URLSearchParams(window.location.search).get('tx');
+        async function loadTx() {
+            if (!txId) return;
+            const res = await fetch(`/v1/qris/status/${txId}`);
+            const tx = await res.json();
+            document.getElementById('txIdLabel').innerText = tx.tx_id;
+            document.getElementById('amountLabel').innerText = `Rp ${tx.amount.toLocaleString()}`;
+            document.getElementById('studentLabel').innerText = `Siswa: ${tx.student_name} (${tx.student_id})`;
+
+            const qrBox = document.getElementById('qrBox');
+            qrBox.innerHTML = '';
+            new QRCode(qrBox, { text: tx.qris_payload, width: 150, height: 150 });
+
+            if (tx.status === 'SETTLEMENT') {
+                document.getElementById('actionBox').classList.add('hidden');
+                document.getElementById('paidBadge').classList.remove('hidden');
+            }
+        }
+
+        async function confirmPayment() {
+            const btn = document.getElementById('btnPay');
+            const errEl = document.getElementById('errText');
+            const pin = document.getElementById('operatorPinInput').value.trim();
+            errEl.classList.add('hidden');
+
+            if (!pin) {
+                errEl.innerText = 'Wajib masukkan PIN Bendahara!';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Memverifikasi...';
+
+            const res = await fetch(`/v1/qris/settle/${txId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    paidVia: document.getElementById('channelSelect').value,
+                    operatorPin: pin
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                btn.disabled = false;
+                btn.innerText = 'Sahkan Mutasi & Kirim Saldo ✓';
+                errEl.innerText = data.error;
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            if (data.tx && data.tx.status === 'SETTLEMENT') {
+                document.getElementById('actionBox').classList.add('hidden');
+                document.getElementById('paidBadge').classList.remove('hidden');
+            }
+        }
+        loadTx();
+    </script>
+</body>
+</html>

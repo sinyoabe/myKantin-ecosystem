@@ -1,0 +1,2780 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>myKantin — Smart POS, P2P Wallet & School Ecosystem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .fade-in { animation: fadeIn 0.25s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .accordion-content {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+            opacity: 0;
+        }
+        .accordion-content.open { grid-template-rows: 1fr; opacity: 1; }
+        .accordion-inner { overflow: hidden; }
+        .chevron-icon { transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+        .chevron-icon.rotate-180 { transform: rotate(180deg); }
+
+        .wa-bg {
+            background-color: #efeae2;
+            background-image: radial-gradient(#d5cec2 0.85px, transparent 0.85px);
+            background-size: 16px 16px;
+        }
+
+        @keyframes coinShimmer {
+            0% { transform: translateX(-150%) skewX(-25deg); }
+            60%, 100% { transform: translateX(250%) skewX(-25deg); }
+        }
+        @keyframes coinPulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.55), 0 6px 16px -2px rgba(217, 119, 6, 0.45); }
+            50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0), 0 10px 22px -2px rgba(245, 158, 11, 0.65); }
+        }
+        .coin-btn {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #fde047 0%, #f59e0b 50%, #d97706 100%);
+            animation: coinPulseGlow 2.4s infinite ease-in-out;
+        }
+        .coin-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 45%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.75) 50%, rgba(255,255,255,0) 100%);
+            animation: coinShimmer 2.8s infinite ease-in-out;
+        }
+
+        #chatWindowBox { transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+        #chatMobileBackdrop { transition: opacity 0.3s ease; }
+        .chat-mobile-expanded {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: min(94vw, 410px) !important;
+            height: min(86vh, 720px) !important;
+            z-index: 60 !important;
+            border-radius: 2rem !important;
+            border: 4px solid #1e293b !important;
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.65) !important;
+            margin: 0 !important;
+        }
+        .chat-mobile-expanded .chat-grid-body {
+            height: calc(100% - 52px) !important;
+            grid-template-columns: 1fr !important;
+        }
+        .chat-mobile-expanded.mobile-has-active .chat-sidebar-pane { display: none !important; }
+        .chat-mobile-expanded:not(.mobile-has-active) .chat-room-pane { display: none !important; }
+        .chat-mobile-expanded .chat-sidebar-pane,
+        .chat-mobile-expanded .chat-room-pane {
+            grid-column: span 12 / span 12 !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-5 right-5 z-[70] hidden transform transition-all duration-300 max-w-md"></div>
+
+    <!-- BACKDROP GELAP TRANSPARAN UNTUK CHAT MOBILE VIEW -->
+    <div id="chatMobileBackdrop" onclick="toggleChatMobileView(false)" class="fixed inset-0 bg-slate-950/65 backdrop-blur-sm z-50 hidden opacity-0"></div>
+
+    <!-- MODAL ZOOM PREVIEW QR CODE -->
+    <div id="qrZoomModal" onclick="closeQrZoomModal()" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div onclick="event.stopPropagation()" class="bg-white w-full max-w-xs rounded-3xl shadow-2xl overflow-hidden fade-in p-6 text-center space-y-4 border border-slate-100">
+            <div class="flex justify-between items-center">
+                <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px] uppercase tracking-wider">Kartu Pelajar QR</span>
+                <button onclick="closeQrZoomModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="p-4 bg-white rounded-2xl border-2 border-emerald-500/30 shadow-inner flex items-center justify-center">
+                <div id="studentQrZoomBox"></div>
+            </div>
+            <div>
+                <p id="qrZoomIdText" class="text-xl font-extrabold text-slate-900 tracking-widest">SIS001</p>
+                <p id="qrZoomNameText" class="text-xs font-bold text-slate-500 mt-0.5">Budi Santoso • XII IPA 1</p>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">Arahkan layar ini ke pemindai kasir untuk pembayaran atau deposit saldo.</p>
+        </div>
+    </div>
+
+<!-- MODAL DEPOSIT QRIS INSTAN & TUNAI KASIR -->
+    <div id="depositGuideModal" class="fixed inset-0 bg-slate-900/65 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden fade-in border border-amber-200">
+            <div class="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 p-5 text-slate-950 relative">
+                <button onclick="closeDepositModal()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-full bg-white/90 text-amber-600 flex items-center justify-center shadow-md font-extrabold text-xl border-2 border-amber-300">🪙</div>
+                    <div>
+                        <h3 class="font-extrabold text-base">Deposit Saldo Dompet</h3>
+                        <p class="text-xs font-semibold text-amber-950/80">QRIS Instan (myPay) atau Tunai Kasir</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 space-y-4 text-xs">
+                <!-- Step 1: Pilih Nominal QRIS -->
+                <div id="qrisDepositStep1" class="space-y-3">
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-3.5 space-y-2.5">
+                        <p class="font-extrabold text-indigo-950 flex items-center gap-1.5">
+                            <i data-lucide="qr-code" class="w-4 h-4 text-indigo-600"></i> 1. Top-Up Otomatis via QRIS Dinamis
+                        </p>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button type="button" onclick="document.getElementById('qrisDepositAmount').value=10000" class="py-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold">10rb</button>
+                            <button type="button" onclick="document.getElementById('qrisDepositAmount').value=20000" class="py-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold">20rb</button>
+                            <button type="button" onclick="document.getElementById('qrisDepositAmount').value=50000" class="py-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold">50rb</button>
+                            <button type="button" onclick="document.getElementById('qrisDepositAmount').value=100000" class="py-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold">100rb</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" id="qrisDepositAmount" value="20000" min="1000" step="1000" class="flex-1 px-3 py-2 rounded-xl border bg-white font-extrabold text-sm text-slate-900">
+                            <button type="button" onclick="createQrisDeposit()" id="btnGenerateQris" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold shadow">Buat QRIS →</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between gap-2">
+                        <div>
+                            <p class="font-bold text-slate-800">2. Deposit Tunai di Meja Kasir</p>
+                            <p class="text-[11px] text-slate-500">ID Anda: <b id="depStudentId">SIS001</b></p>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <button onclick="closeDepositModal(); openQrZoomModal();" class="px-2.5 py-2 rounded-xl bg-slate-900 text-white font-bold text-[11px]">QR Kartu</button>
+                            <button onclick="goToKasirChatForDeposit()" class="px-2.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-[11px]">Chat Kasir</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Tampilan QRIS Dinamis & Menunggu Pembayaran -->
+                <div id="qrisDepositStep2" class="hidden text-center space-y-3">
+                    <div class="p-3 bg-indigo-50 rounded-2xl border border-indigo-200">
+                        <p class="text-[11px] font-bold text-indigo-700">Scan QRIS Dinamis Senilai:</p>
+                        <p id="qrisShowAmount" class="text-2xl font-extrabold text-slate-900">Rp 0</p>
+                    </div>
+                    <div class="flex justify-center">
+                        <div id="qrisDynamicCanvas" class="p-3 bg-white border-2 border-indigo-500/30 rounded-2xl shadow-sm"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-500 animate-pulse font-semibold">⏳ Menunggu konfirmasi pembayaran QRIS...</p>
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button type="button" onclick="resetDepositModalView()" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">← Ubah Nominal</button>
+
+                        <div class="space-y-2 pt-1">
+                            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-bold text-[11px]">
+                                Scan QRIS di atas dengan M-Banking / E-Wallet Anda. Saldo otomatis masuk setelah mutasi terverifikasi.
+                            </div>
+                           <button type="button" onclick="resetDepositModalView()" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">← Ubah Nominal</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL BUAT GRUP CHAT BARU -->
+    <div id="createGroupModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden fade-in p-5 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-extrabold text-base flex items-center gap-2 text-slate-800">
+                    <i data-lucide="users" class="w-5 h-5 text-emerald-600"></i> Buat Grup Chat Baru
+                </h3>
+                <button onclick="closeCreateGroupModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-bold text-slate-600">Nama Grup</label>
+                    <input type="text" id="newGroupName" placeholder="Contoh: Geng Jajan XII IPA 1" class="w-full mt-1 p-2.5 rounded-xl border text-sm font-medium outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600">Pilih Anggota Grup:</label>
+                    <div id="groupMemberCheckboxes" class="mt-1.5 space-y-1.5 max-h-40 overflow-y-auto border rounded-xl p-2.5 bg-slate-50"></div>
+                </div>
+                <button onclick="submitCreateGroup()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow">Buat Grup Sekarang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH / UNDANG ANGGOTA KE GRUP -->
+    <div id="inviteGroupModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden fade-in p-5 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="font-extrabold text-base flex items-center gap-2 text-slate-800">
+                        <i data-lucide="user-plus" class="w-5 h-5 text-emerald-600"></i> Undang Anggota Grup
+                    </h3>
+                    <p id="inviteGroupTitleSub" class="text-xs text-slate-500 mt-0.5">Grup: -</p>
+                </div>
+                <button onclick="closeInviteGroupModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-3.5">
+                <div class="bg-slate-50 p-3 rounded-2xl border space-y-1.5">
+                    <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <i data-lucide="id-card" class="w-3.5 h-3.5 text-emerald-600"></i> 1. Undang via ID Siswa (NIS)
+                    </label>
+                    <input type="text" id="inviteByIdInput" placeholder="Contoh: SIS003 (pisahkan koma jika > 1)" class="w-full p-2.5 rounded-xl border bg-white text-xs font-bold uppercase outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1.5">
+                        <i data-lucide="message-square" class="w-3.5 h-3.5 text-emerald-600"></i> 2. Pilih dari Riwayat Chat / Daftar Teman
+                    </label>
+                    <div id="inviteAvailableList" class="space-y-1.5 max-h-44 overflow-y-auto border rounded-2xl p-2.5 bg-slate-50"></div>
+                </div>
+                <button onclick="submitInviteMembers()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/20">Tambahkan ke Grup Sekarang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KELOLA / HAPUS ANGGOTA GRUP -->
+    <div id="manageMembersModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden fade-in p-5 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="font-extrabold text-base flex items-center gap-2 text-slate-800">
+                        <i data-lucide="users" class="w-5 h-5 text-rose-600"></i> Anggota Grup
+                    </h3>
+                    <p id="manageGroupTitleSub" class="text-xs text-slate-500 mt-0.5">Grup: -</p>
+                </div>
+                <button onclick="closeManageMembersModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="manageMembersList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            <div class="border-t pt-3">
+                <button onclick="leaveCurrentGroup()" class="w-full py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs flex items-center justify-center gap-1.5">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Keluar dari Grup Ini
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH KONTAK PERSONAL -->
+    <div id="addContactModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden fade-in">
+            <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 p-5 text-white relative">
+                <button onclick="closeAddContactModal()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner"><i data-lucide="user-plus" class="w-6 h-6 text-emerald-200"></i></div>
+                    <div>
+                        <h3 class="font-extrabold text-base tracking-tight">Tambah Teman Chat</h3>
+                        <p class="text-xs text-emerald-100">Cari nama, kelas, atau ketik ID Siswa</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-5 space-y-4">
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400"></i>
+                    <input type="text" id="contactSearchInput" onkeyup="filterAddContactList(event)" placeholder="Ketik ID (misal: SIS002) atau nama teman..." class="w-full pl-10 pr-24 py-3 rounded-2xl border-2 border-slate-200 focus:border-emerald-500 outline-none text-xs sm:text-sm font-bold text-slate-800 transition">
+                    <button type="button" onclick="submitAddContactByInput()" class="absolute right-1.5 top-1.5 bottom-1.5 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow transition">Tambah</button>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Daftar Siswa Terdaftar</span>
+                        <span id="contactMatchCount" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">0 Siswa</span>
+                    </div>
+                    <div id="addContactSuggestions" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI & INPUT PIN MODERN -->
+    <div id="customDialogModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-slate-100 overflow-hidden fade-in p-6 text-center space-y-4">
+            <div id="dialogIconBox" class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-inner"><i data-lucide="shield-question" class="w-7 h-7"></i></div>
+            <div class="space-y-1">
+                <h3 id="dialogTitle" class="font-extrabold text-base text-slate-900">Konfirmasi Tindakan</h3>
+                <p id="dialogMessage" class="text-xs text-slate-500 leading-relaxed">Apakah Anda yakin?</p>
+            </div>
+            <div id="dialogPinWrapper" class="hidden pt-1">
+                <input type="password" id="dialogPinInput" maxlength="4" placeholder="••••" class="w-40 mx-auto text-center py-2.5 px-4 rounded-2xl border-2 border-slate-200 focus:border-emerald-500 outline-none text-lg font-extrabold tracking-[0.5em]">
+            </div>
+            <div class="grid grid-cols-2 gap-2.5 pt-2">
+                <button type="button" id="dialogCancelBtn" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">Batal</button>
+                <button type="button" id="dialogConfirmBtn" class="py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 transition">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL STRUK DIGITAL -->
+    <div id="receiptModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden fade-in">
+            <div class="bg-emerald-600 text-white p-5 text-center relative">
+                <button onclick="closeReceiptModal()" class="absolute right-4 top-4 text-white/80 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2"><i data-lucide="receipt" class="w-5 h-5"></i></div>
+                <h3 class="font-extrabold text-lg">Struk Digital myKantin</h3>
+                <p id="recTxId" class="text-xs text-emerald-100 mt-0.5">No. Transaksi #0</p>
+            </div>
+            <div class="p-5 space-y-4 text-xs">
+                <div class="border-b border-dashed pb-3 space-y-1 text-slate-600">
+                    <div class="flex justify-between"><span>Waktu:</span><b id="recDate" class="text-slate-800">-</b></div>
+                    <div class="flex justify-between"><span>Pembeli:</span><b id="recBuyer" class="text-slate-800">-</b></div>
+                    <div class="flex justify-between"><span>Sumber Dana:</span><b id="recPayer" class="text-slate-800">-</b></div>
+                    <div class="flex justify-between"><span>Metode:</span><span id="recMethod" class="font-bold"></span></div>
+                </div>
+                <div>
+                    <p class="font-bold text-slate-500 uppercase tracking-wider mb-2">Rincian Belanja</p>
+                    <div id="recItemsList" class="space-y-2"></div>
+                </div>
+                <div class="border-t border-dashed pt-3 flex justify-between items-center text-sm font-extrabold text-slate-900">
+                    <span>TOTAL BAYAR</span>
+                    <span id="recTotal" class="text-emerald-600 text-base">Rp 0</span>
+                </div>
+                <button onclick="closeReceiptModal()" class="w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs">Tutup Struk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KAMERA SCANNER KASIR -->
+    <div id="cameraModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden p-5 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-base flex items-center gap-2"><i data-lucide="camera" class="w-5 h-5 text-emerald-600"></i> Scan QR Siswa / Barcode Barang</h3>
+                <button onclick="stopCameraScanner()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="flex gap-2 text-xs">
+                <span class="font-bold text-slate-500 py-1">Target Scan QR Siswa:</span>
+                <select id="camTargetRole" class="border rounded-lg px-2 py-1 font-bold text-emerald-700 bg-emerald-50">
+                    <option value="buyer">Set sebagai Pembeli</option>
+                    <option value="payer">Set sebagai Sumber Dana (Teman)</option>
+                </select>
+            </div>
+            <div id="reader" class="w-full rounded-2xl overflow-hidden border"></div>
+            <p class="text-xs text-center text-slate-500">Arahkan QR Kartu Pelajar Siswa atau Barcode Kemasan ke kamera.</p>
+        </div>
+    </div>
+
+    <!-- ==================== 1. HALAMAN LOGIN ==================== -->
+    <div id="loginView" class="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden fade-in">
+            <div class="p-6 text-center bg-slate-900 text-white">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500 text-white mb-3 shadow-lg"><i data-lucide="shopping-bag" class="w-6 h-6"></i></div>
+                <h1 class="text-2xl font-extrabold tracking-tight">myKantin</h1>
+                <p class="text-xs text-slate-400 mt-1">Supermarket Sekolah, P2P Lending & Pre-Order</p>
+            </div>
+            <div class="grid grid-cols-2 border-b bg-slate-100 p-1.5 gap-1.5">
+                <button id="tabSiswa" onclick="switchLoginRole('siswa')" class="py-2.5 text-sm font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition flex items-center justify-center gap-2"><i data-lucide="graduation-cap" class="w-4 h-4"></i> Login Siswa</button>
+                <button id="tabKasir" onclick="switchLoginRole('kasir')" class="py-2.5 text-sm font-bold rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2"><i data-lucide="store" class="w-4 h-4"></i> Login Kasir / Admin</button>
+            </div>
+            <form id="loginForm" class="p-6 space-y-4">
+                <div>
+                    <label id="labelId" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">NIS / ID Siswa</label>
+                    <input type="text" id="loginId" placeholder="Contoh: SIS001" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none text-sm font-medium" required>
+                </div>
+                <div>
+                    <label id="labelPin" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">PIN Keamanan (4 Digit)</label>
+                    <input type="password" id="loginPin" placeholder="••••" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none text-sm font-medium" required>
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+                    <span>Masuk Aplikasi</span><i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+                <div id="demoHint" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 space-y-1">
+                    <p class="font-bold text-slate-700">💡 Akun Demo Siswa:</p>
+                    <p>• <b>SIS001</b> (Budi) | PIN: <b>1234</b></p>
+                    <p>• <b>SIS002</b> (Siti) | PIN: <b>5678</b></p>
+                    <p>• <b>SIS003</b> (Andi) | PIN: <b>1111</b></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== 2. NAVBAR UTAMA ==================== -->
+    <nav id="mainNav" class="hidden bg-white border-b sticky top-0 z-40 px-4 lg:px-8 py-3 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold"><i data-lucide="shopping-bag" class="w-5 h-5"></i></div>
+                <div>
+                    <span class="font-extrabold text-lg text-slate-900">myKantin</span>
+                    <span id="roleBadge" class="ml-2 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase"></span>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p id="navUserName" class="text-sm font-bold text-slate-800"></p>
+                    <p id="navUserSub" class="text-xs text-slate-500"></p>
+                </div>
+                <button onclick="logout()" class="px-3.5 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold flex items-center gap-1.5 transition"><i data-lucide="log-out" class="w-4 h-4"></i> Keluar</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== 3. DASHBOARD KASIR & LAPORAN ADMIN ==================== -->
+    <main id="kasirDashboard" class="hidden flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 fade-in">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="switchKasirTab('pos')" id="btnKasirPos" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 text-white shadow flex items-center gap-2"><i data-lucide="scan-barcode" class="w-4 h-4"></i> Kasir Cepat</button>
+                <button onclick="switchKasirTab('preorder')" id="btnKasirPreorder" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-600 border hover:bg-slate-50 flex items-center gap-2 relative">
+                    <i data-lucide="clock" class="w-4 h-4"></i> Antrean Pre-Order
+                    <span id="preorderBadgeCount" class="hidden ml-1 px-2 py-0.5 text-[10px] rounded-full bg-amber-500 text-white font-extrabold">0</span>
+                </button>
+                <button onclick="switchKasirTab('chat')" id="btnKasirChat" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-600 border hover:bg-slate-50 flex items-center gap-2 relative">
+                    <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i> Chat Siswa
+                    <span id="kasirChatUnreadBadge" class="hidden ml-1 px-2 py-0.5 text-[10px] rounded-full bg-rose-500 text-white font-extrabold">0</span>
+                </button>
+                <button onclick="switchKasirTab('stok')" id="btnKasirStok" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-600 border hover:bg-slate-50 flex items-center gap-2"><i data-lucide="package-plus" class="w-4 h-4"></i> Input Stok</button>
+                <button onclick="switchKasirTab('topup')" id="btnKasirTopup" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-600 border hover:bg-slate-50 flex items-center gap-2"><i data-lucide="wallet" class="w-4 h-4"></i> Top-Up Saldo</button>
+                <button onclick="switchKasirTab('laporan')" id="btnKasirLaporan" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-600 border hover:bg-slate-50 flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Laporan Sekolah</button>
+            </div>
+            <button onclick="startCameraScanner()" class="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-900 hover:bg-slate-800 text-white shadow flex items-center gap-2"><i data-lucide="qr-code" class="w-4 h-4 text-emerald-400"></i> Scan Kamera</button>
+        </div>
+
+        <!-- TAB A: KASIR POS DENGAN KATEGORI CERDAS -->
+        <div id="kasirTabPos" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="lg:col-span-7 space-y-4">
+                <div class="bg-white p-4 rounded-2xl border shadow-sm space-y-3">
+                    <div class="relative">
+                        <i data-lucide="scan-barcode" class="w-4 h-4 absolute left-3.5 top-3 text-emerald-600"></i>
+                        <input type="text" id="searchProduct" onkeyup="handleBarcodeInput(event)" placeholder="Scan Barcode USB atau ketik nama barang (Enter = Auto Masuk)..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 outline-none text-sm font-medium" autofocus>
+                    </div>
+
+                    <!-- BAR FILTER KATEGORI CERDAS KASIR -->
+                    <div id="kasirSmartCategoryBar" class="space-y-2 pt-1"></div>
+
+                    <div id="kasirProductGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[480px] overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5">
+                <div class="bg-white p-5 rounded-2xl border shadow-sm sticky top-20">
+                    <h2 class="font-bold text-base flex items-center gap-2 pb-3 border-b"><i data-lucide="shopping-cart" class="w-5 h-5 text-emerald-600"></i> Keranjang Belanja</h2>
+                    <div id="cartItems" class="py-3 space-y-2.5 max-h-48 overflow-y-auto border-b text-sm">
+                        <p class="text-slate-400 text-center py-6">Scan barcode atau klik barang di samping</p>
+                    </div>
+                    <div class="flex justify-between items-center py-3 text-lg font-extrabold">
+                        <span>Total Tagihan</span>
+                        <span id="cartTotal" class="text-emerald-600">Rp 0</span>
+                    </div>
+                    <div class="bg-emerald-50/70 border border-emerald-200 p-3 rounded-xl mb-3">
+                        <label class="text-[11px] font-extrabold uppercase text-emerald-800 flex items-center gap-1.5"><i data-lucide="qr-code" class="w-3.5 h-3.5"></i> Scan Cepat QR Kartu Pelajar</label>
+                        <div class="flex gap-2 mt-1.5">
+                            <input type="text" id="quickStudentScan" onkeyup="handleStudentQrInput(event)" placeholder="Scan QR Siswa (misal: SIS001) + Enter" class="flex-1 px-3 py-1.5 rounded-lg border bg-white text-xs font-bold uppercase">
+                            <select id="quickScanTarget" class="px-2 py-1.5 rounded-lg border bg-white text-xs font-bold text-slate-700">
+                                <option value="buyer">Pembeli</option>
+                                <option value="payer">Pembayar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border space-y-3">
+                        <div>
+                            <label class="text-xs font-bold text-slate-600">1. Siswa Pembeli (Yang Belanja)</label>
+                            <select id="posBuyer" onchange="checkLoanStatus()" class="w-full mt-1 p-2.5 rounded-xl border bg-white text-sm font-medium"></select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-600">2. Sumber Dana (Bayar Sendiri / Pinjam Teman)</label>
+                            <select id="posPayer" onchange="checkLoanStatus()" class="w-full mt-1 p-2.5 rounded-xl border bg-white text-sm font-medium"></select>
+                        </div>
+                        <div id="loanBanner" class="hidden p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
+                            <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 mt-0.5 text-amber-600"></i>
+                            <div>
+                                <p class="font-bold">Mode Pinjaman Teman Aktif</p>
+                                <p>Pemilik dana wajib memasukkan PIN sebagai persetujuan meminjamkan uang.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-600">3. PIN Autentikasi Pemilik Dana</label>
+                            <input type="password" id="posPin" maxlength="4" placeholder="Masukkan 4 digit PIN pembayar" class="w-full mt-1 p-2.5 rounded-xl border bg-white text-sm tracking-widest font-bold">
+                        </div>
+                        <button onclick="processCheckout()" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 transition">Selesaikan Transaksi & Cetak Struk</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB B: ANTREAN PRE-ORDER -->
+        <div id="kasirTabPreorder" class="hidden bg-white p-6 rounded-2xl border shadow-sm">
+            <div class="flex justify-between items-center border-b pb-4 mb-5">
+                <div>
+                    <h2 class="font-bold text-lg flex items-center gap-2"><i data-lucide="clock" class="w-5 h-5 text-amber-600"></i> Antrean Pre-Order Istirahat (Loket Cepat)</h2>
+                    <p class="text-xs text-slate-500">Pesanan lunas yang dikirim siswa dari kelas sebelum jam istirahat.</p>
+                </div>
+            </div>
+            <div id="kasirPreorderList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- TAB F: CHAT SISWA UNTUK KASIR -->
+        <div id="kasirTabChat" class="hidden bg-white rounded-2xl border shadow-sm overflow-hidden">
+            <div class="grid grid-cols-1 md:grid-cols-12 h-[540px]">
+                <div class="md:col-span-4 border-r bg-slate-50/60 flex flex-col">
+                    <div class="p-4 border-b bg-white">
+                        <h3 class="font-extrabold text-sm text-slate-800 flex items-center gap-2"><i data-lucide="message-square" class="w-4 h-4 text-emerald-600"></i> Pesan Masuk Siswa</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Tanya stok jajan, pesanan & deposit saldo</p>
+                    </div>
+                    <div id="kasirStudentChatList" class="flex-1 overflow-y-auto divide-y"></div>
+                </div>
+                <div class="md:col-span-8 flex flex-col h-full bg-white">
+                    <div class="px-4 py-3 border-b bg-slate-50 flex justify-between items-center">
+                        <div>
+                            <p id="kasirChatActiveName" class="font-extrabold text-sm text-slate-800">Pilih siswa di sebelah kiri</p>
+                            <p id="kasirChatActiveSub" class="text-[11px] text-slate-500">Gunakan tombol jawaban cepat di bawah untuk membalas instan</p>
+                        </div>
+                        <button id="btnKasirClearChat" onclick="clearKasirStudentChat()" class="hidden px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold flex items-center gap-1"><i data-lucide="eraser" class="w-3.5 h-3.5"></i> Bersihkan</button>
+                    </div>
+                    <div id="kasirChatMessagesArea" class="flex-1 p-4 overflow-y-auto space-y-2.5 wa-bg">
+                        <div class="h-full flex items-center justify-center text-xs text-slate-500 bg-white/80 rounded-2xl p-4 text-center">Pilih nama siswa di panel kiri untuk melihat pertanyaan jajan / pesanan dan membalasnya.</div>
+                    </div>
+                    <div id="kasirQuickTemplatesBox" class="hidden px-3 py-2 bg-emerald-50/70 border-t border-emerald-100">
+                        <p class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 mb-1.5 flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3"></i> Jawaban Template Cepat (Klik untuk Kirim):</p>
+                        <div id="kasirTemplateButtons" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <form id="kasirChatSendForm" class="p-3 bg-slate-100 border-t flex items-center gap-2">
+                        <input type="text" id="kasirChatInput" placeholder="Ketik balasan untuk siswa..." class="flex-1 px-4 py-2.5 rounded-full border bg-white text-xs sm:text-sm outline-none focus:border-emerald-500" disabled>
+                        <button type="submit" id="kasirChatSendBtn" class="px-4 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow disabled:opacity-50" disabled><span>Kirim</span> <i data-lucide="send" class="w-3.5 h-3.5"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB C: INPUT STOK BARANG (DENGAN 4 SUB-KATEGORI CERDAS) -->
+        <div id="kasirTabStok" class="hidden max-w-xl mx-auto bg-white p-6 rounded-2xl border shadow-sm">
+            <h2 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="package-plus" class="w-5 h-5 text-emerald-600"></i> Input / Tambah Stok Kantin</h2>
+            <form id="formAddProduct" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-600">Kode Barcode</label>
+                    <input type="text" id="inBarcode" placeholder="Contoh: 8991008" class="w-full mt-1 p-3 rounded-xl border text-sm" required>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">Nama Produk</label>
+                        <input type="text" id="inName" placeholder="Contoh: Es Kopi Susu / Bakso Kuah" class="w-full mt-1 p-3 rounded-xl border text-sm" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">Kategori Cerdas</label>
+                        <select id="inCategory" class="w-full mt-1 p-3 rounded-xl border text-sm bg-white font-semibold">
+                            <option value="Minuman - Es">🧊 Minuman — Es (Dingin)</option>
+                            <option value="Minuman - Biasa">🥤 Minuman — Biasa (Non-Es)</option>
+                            <option value="Makanan - Cemilan">🍩 Makanan — Cemilan / Snack</option>
+                            <option value="Makanan - Makanan Berat">🍛 Makanan — Makanan Berat</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">Harga Jual (Rp)</label>
+                        <input type="number" id="inPrice" placeholder="7000" class="w-full mt-1 p-3 rounded-xl border text-sm" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-600">Jumlah Stok Masuk</label>
+                        <input type="number" id="inStock" placeholder="25" class="w-full mt-1 p-3 rounded-xl border text-sm" required>
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm">Simpan ke Katalog Kantin</button>
+            </form>
+        </div>
+
+        <!-- TAB D: TOP-UP SALDO SISWA -->
+        <div id="kasirTabTopup" class="hidden max-w-xl mx-auto bg-white p-6 rounded-2xl border shadow-sm">
+            <h2 class="font-bold text-lg mb-2 flex items-center gap-2"><i data-lucide="wallet" class="w-5 h-5 text-emerald-600"></i> Isi Ulang (Top-Up) Dompet Siswa</h2>
+            <p class="text-xs text-slate-500 mb-4 bg-blue-50 text-blue-800 p-3 rounded-xl border border-blue-200">ℹ️ <b>Sistem Auto-Debit Aktif:</b> Jika siswa memiliki hutang pinjaman ke teman, dana Top-Up akan otomatis memotong dan melunasi hutang tersebut terlebih dahulu.</p>
+            <form id="formTopup" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-600">Pilih Akun Siswa</label>
+                    <select id="topupStudent" class="w-full mt-1 p-3 rounded-xl border text-sm bg-white"></select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-600">Nominal Top-Up (Rp)</label>
+                    <input type="number" id="topupAmount" placeholder="50000" min="1000" class="w-full mt-1 p-3 rounded-xl border text-sm" required>
+                </div>
+                <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm">Proses Top-Up Tunai</button>
+            </form>
+        </div>
+
+        <!-- TAB E: DASHBOARD LAPORAN ADMIN / SEKOLAH -->
+        <div id="kasirTabLaporan" class="hidden space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase">Total Omzet Kantin</p><p id="statTotalRevenue" class="text-2xl font-extrabold text-emerald-600 mt-1">Rp 0</p></div>
+                <div class="bg-white p-5 rounded-2xl border shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase">Total Transaksi</p><p id="statTotalTx" class="text-2xl font-extrabold text-slate-800 mt-1">0</p></div>
+                <div class="bg-white p-5 rounded-2xl border shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase">Produk Terlaris</p><p id="statTopProduct" class="text-lg font-extrabold text-blue-600 mt-1 truncate">-</p></div>
+                <div class="bg-white p-5 rounded-2xl border shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase">Stok Menipis (&lt; 10)</p><p id="statLowStockCount" class="text-2xl font-extrabold text-red-600 mt-1">0 Item</p></div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-7 bg-white p-5 rounded-2xl border shadow-sm">
+                    <h3 class="font-bold text-base mb-4 flex items-center gap-2"><i data-lucide="trending-up" class="w-5 h-5 text-emerald-600"></i> Grafik Omzet Penjualan Kantin</h3>
+                    <canvas id="revenueChart" height="140"></canvas>
+                </div>
+                <div class="lg:col-span-5 bg-white p-5 rounded-2xl border shadow-sm space-y-4">
+                    <h3 class="font-bold text-base flex items-center gap-2 text-red-600"><i data-lucide="alert-octagon" class="w-5 h-5"></i> Peringatan Stok Menipis (Low Stock)</h3>
+                    <div id="lowStockList" class="space-y-2.5"></div>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border shadow-sm">
+                <h3 class="font-bold text-base mb-4 flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-slate-700"></i> Riwayat Struk Transaksi Terbaru</h3>
+                <div id="kasirTxList" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border shadow-sm">
+                <h3 class="font-bold text-base mb-3 flex items-center gap-2 text-indigo-700">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i> Audit Log Penambahan Saldo (Anti-Manipulasi)
+                </h3>
+                <div id="auditLogList" class="space-y-2 text-xs"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ==================== 4. DASHBOARD SISWA ==================== -->
+    <main id="siswaDashboard" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 lg:p-6 space-y-5 fade-in">
+        <!-- Kartu Saldo, Tombol Koin Deposit, Skor Kepercayaan & QR Code -->
+        <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-900 text-white p-6 sm:p-7 rounded-3xl shadow-xl relative overflow-hidden">
+            <div class="relative z-10 flex flex-col md:flex-row justify-between md:items-center gap-6">
+                <div class="space-y-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <p class="text-xs uppercase tracking-widest text-emerald-300 font-bold">Saldo Dompet myKantin</p>
+                        <span id="siswaTrustBadge" class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full"></span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3.5">
+                        <h2 id="siswaBalance" class="text-3xl sm:text-4xl font-extrabold">Rp 0</h2>
+                        <button type="button" onclick="openDepositModal()" class="coin-btn px-3.5 py-1.5 rounded-full border-2 border-yellow-200 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform cursor-pointer" title="Isi Ulang / Deposit Saldo di Kasir">
+                            <span class="w-5 h-5 rounded-full bg-amber-900/20 border border-amber-800/30 flex items-center justify-center text-[11px]">🪙</span>
+                            <span class="tracking-wide uppercase">Deposit</span>
+                        </button>
+                    </div>
+                    <p id="siswaInfo" class="text-sm text-slate-300"></p>
+                    <div class="inline-flex flex-wrap gap-3 bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2 rounded-xl text-xs">
+                        <span>Skor Kredit: <b id="siswaCreditScore" class="text-emerald-300">100</b>/150</span>
+                        <span class="text-white/30">|</span>
+                        <span>Hutang Aktif: <b id="siswaActiveDebt" class="text-amber-300">Rp 0</b></span>
+                        <span class="text-white/30">|</span>
+                        <span>Limit Pinjam: <b id="siswaMaxLimit" class="text-white">Rp 25.000</b></span>
+                    </div>
+                </div>
+                <div onclick="openQrZoomModal()" class="bg-white text-slate-900 p-3.5 rounded-2xl shadow-lg flex items-center gap-4 self-start md:self-auto cursor-pointer hover:scale-[1.03] active:scale-95 transition-transform group" title="Klik untuk memperbesar QR Code">
+                    <div id="studentQrBox" class="p-1.5 bg-white rounded-xl border border-slate-200 relative"></div>
+                    <div class="text-xs space-y-1 pr-2">
+                        <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-extrabold text-[10px] uppercase">Kartu Pelajar QR</span>
+                        <p id="siswaQrIdText" class="font-extrabold text-base text-slate-900 tracking-wide">SIS001</p>
+                        <p class="text-[11px] text-emerald-600 font-bold flex items-center gap-1 group-hover:underline"><i data-lucide="zoom-in" class="w-3 h-3"></i> Klik untuk Zoom</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOTIFIKASI PERMINTAAN PINJAMAN MASUK -->
+        <div id="incomingRequestsBox" class="hidden bg-amber-50 border-2 border-amber-300 p-5 rounded-2xl shadow-sm fade-in">
+            <h3 class="font-extrabold text-sm sm:text-base text-amber-900 flex items-center gap-2 mb-3"><i data-lucide="bell-ring" class="w-5 h-5 text-amber-600"></i> Permintaan Pinjaman Masuk (Butuh Persetujuan Anda)</h3>
+            <div id="incomingRequestsList" class="space-y-3"></div>
+        </div>
+
+        <!-- ==================== TOMBOL ACCORDION UTAMA ==================== -->
+        <div id="studentAccordionAnchor" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button type="button" onclick="toggleAccordion('preorder')" id="btnAccPreorder" class="w-full p-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 transition-all duration-300 flex items-center justify-between text-left">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0"><i data-lucide="utensils" class="w-4 h-4"></i></div>
+                    <div><p class="font-extrabold text-sm">Pre-Order Kantin</p><p class="text-[11px] text-emerald-100">Pesan tanpa antre</p></div>
+                </div>
+                <i id="chevPreorder" data-lucide="chevron-down" class="w-4 h-4 chevron-icon opacity-90"></i>
+            </button>
+
+            <button type="button" onclick="toggleAccordion('loan')" id="btnAccLoan" class="w-full p-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/20 transition-all duration-300 flex items-center justify-between text-left">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0"><i data-lucide="hand-coins" class="w-4 h-4"></i></div>
+                    <div><p class="font-extrabold text-sm">Pinjam & Pinjamkan</p><p class="text-[11px] text-rose-100">Transfer / minta saldo</p></div>
+                </div>
+                <i id="chevLoan" data-lucide="chevron-down" class="w-4 h-4 chevron-icon opacity-90"></i>
+            </button>
+
+            <button type="button" onclick="toggleAccordion('chat')" id="btnAccChat" class="relative w-full p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20 transition-all duration-300 flex items-center justify-between text-left">
+                <div class="flex items-center gap-3">
+                    <div class="relative w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="message-circle" class="w-4 h-4"></i>
+                        <span id="globalUnreadDot" class="hidden absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 ring-2 ring-slate-900 animate-ping"></span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <p class="font-extrabold text-sm">Chat Teman & Kasir</p>
+                            <span id="globalUnreadBadge" class="hidden px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-red-500 text-white">0 Baru</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Personal, grup & tanya kasir</p>
+                    </div>
+                </div>
+                <i id="chevChat" data-lucide="chevron-down" class="w-4 h-4 chevron-icon opacity-90"></i>
+            </button>
+        </div>
+
+        <!-- KONTEN ACCORDION 1: PRE-ORDER ISTIRAHAT (DENGAN KATEGORI CERDAS) -->
+        <div id="accPreorderContent" class="accordion-content">
+            <div class="accordion-inner">
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border-2 border-emerald-200 shadow-sm mt-1">
+                    <div class="flex justify-between items-center border-b pb-3 mb-4">
+                        <h3 class="font-bold text-sm sm:text-base flex items-center gap-2 text-emerald-800"><i data-lucide="utensils" class="w-4 h-4 text-emerald-600"></i> Form Pre-Order Istirahat (Pesan dari Kelas)</h3>
+                        <button onclick="toggleAccordion('preorder')" class="text-xs font-bold text-slate-400 hover:text-slate-700">Tutup ✕</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                        <div class="md:col-span-7 space-y-3">
+                            <!-- BAR FILTER KATEGORI CERDAS SISWA -->
+                            <div id="siswaSmartCategoryBar" class="space-y-2"></div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1" id="siswaPreorderMenu"></div>
+                        </div>
+
+                        <div class="md:col-span-5 bg-emerald-50/50 border border-emerald-200 rounded-2xl p-4 space-y-3">
+                            <div class="flex justify-between items-center">
+                                <p class="text-xs font-extrabold uppercase text-emerald-800">Pesanan Pre-Order Anda</p>
+                                <button type="button" onclick="preorderCart=[]; renderPreorderCart();" class="text-[10px] font-bold text-red-500 hover:underline">Kosongkan</button>
+                            </div>
+                            <div id="preorderCartList" class="space-y-1.5 text-xs min-h-[54px] border-b border-emerald-200/70 pb-2.5">
+                                <p class="text-slate-400 italic">Klik menu di samping untuk memesan...</p>
+                            </div>
+                            <div class="flex justify-between font-extrabold text-sm">
+                                <span>Total Bayar:</span>
+                                <span id="preorderTotal" class="text-emerald-600">Rp 0</span>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-600">Waktu Pengambilan:</label>
+                                <select id="preorderSlot" class="w-full mt-1 p-2 rounded-xl border bg-white text-xs font-bold">
+                                    <option value="Istirahat 1 (09:30)">Istirahat 1 (09:30)</option>
+                                    <option value="Istirahat 2 (12:00)">Istirahat 2 (12:00)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-600">PIN Dompet Anda:</label>
+                                <input type="password" id="preorderPin" maxlength="4" placeholder="••••" class="w-full mt-1 p-2 rounded-xl border bg-white text-xs font-bold tracking-widest">
+                            </div>
+                            <button onclick="submitPreorder()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow">Bayar & Kirim Pre-Order</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KONTEN ACCORDION 2: PINJAM & PINJAMKAN SALDO -->
+        <div id="accLoanContent" class="accordion-content">
+            <div class="accordion-inner">
+                <div class="bg-white p-5 sm:p-6 rounded-2xl border-2 border-rose-200 shadow-sm mt-1">
+                    <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-4 mb-5">
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="switchLoanActionTab('lend')" id="btnTabLend" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 text-white shadow flex items-center gap-2 transition"><i data-lucide="send" class="w-4 h-4"></i> Pinjamkan Saldo ke Teman</button>
+                            <button onclick="switchLoanActionTab('request')" id="btnTabRequest" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-2 transition"><i data-lucide="hand-coins" class="w-4 h-4"></i> Minta Pinjaman ke Teman</button>
+                        </div>
+                        <button onclick="toggleAccordion('loan')" class="text-xs font-bold text-slate-400 hover:text-slate-700">Tutup ✕</button>
+                    </div>
+                    <form id="formLendMoney" class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                        <div class="md:col-span-7 space-y-3.5">
+                            <div>
+                                <label class="text-xs font-bold text-slate-600">Pilih Teman Tujuan</label>
+                                <select id="lendTargetSelect" onchange="updateLendPreview()" class="w-full mt-1 p-2.5 rounded-xl border bg-slate-50 focus:bg-white focus:border-rose-500 outline-none text-sm font-medium" required></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-600">Nominal yang Dipinjamkan (Rp)</label>
+                                <input type="number" id="lendAmountInput" oninput="updateLendPreview()" min="1000" step="500" placeholder="Contoh: 15000" class="w-full mt-1 p-2.5 rounded-xl border bg-slate-50 focus:bg-white focus:border-rose-500 outline-none text-sm font-bold" required>
+                                <div class="flex flex-wrap gap-1.5 mt-2">
+                                    <button type="button" onclick="setQuickLend(5000)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-xs font-bold text-slate-600">+5.000</button>
+                                    <button type="button" onclick="setQuickLend(10000)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-xs font-bold text-slate-600">+10.000</button>
+                                    <button type="button" onclick="setQuickLend(15000)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-xs font-bold text-slate-600">+15.000</button>
+                                    <button type="button" onclick="setQuickLend(20000)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-100 hover:text-rose-700 text-xs font-bold text-slate-600">+20.000</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-600">Konfirmasi PIN Anda (4 Digit)</label>
+                                <input type="password" id="lendPinInput" maxlength="4" placeholder="••••" class="w-full mt-1 p-2.5 rounded-xl border bg-slate-50 focus:bg-white focus:border-rose-500 outline-none text-sm font-bold tracking-widest" required>
+                            </div>
+                        </div>
+                        <div class="md:col-span-5 bg-rose-50/70 border border-rose-200 rounded-2xl p-4 flex flex-col justify-between space-y-4">
+                            <div class="space-y-2.5">
+                                <p class="text-[11px] font-extrabold uppercase tracking-wider text-rose-800 flex items-center gap-1.5"><i data-lucide="receipt" class="w-3.5 h-3.5"></i> Ringkasan Transfer Pinjaman</p>
+                                <div class="text-xs space-y-1.5 text-slate-600 border-b border-rose-200/80 pb-2.5">
+                                    <div class="flex justify-between"><span>Penerima:</span><span id="previewTargetName" class="font-bold text-slate-800">-</span></div>
+                                    <div class="flex justify-between"><span>Saldo Anda Saat Ini:</span><span id="previewCurrentBal" class="font-semibold text-slate-700">Rp 0</span></div>
+                                    <div class="flex justify-between"><span>Estimasi Sisa Saldo:</span><span id="previewAfterBal" class="font-bold text-slate-800">Rp 0</span></div>
+                                </div>
+                                <div class="pt-1">
+                                    <p class="text-[11px] font-semibold text-slate-500">Nilai yang Akan Ditransfer:</p>
+                                    <p id="previewTransferAmount" class="text-2xl font-extrabold text-rose-600">Rp 0</p>
+                                    <p id="previewWarning" class="hidden text-[11px] font-bold text-red-600 mt-1">⚠️ Saldo Anda tidak mencukupi!</p>
+                                </div>
+                            </div>
+                            <button type="submit" id="btnSubmitLend" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-rose-600/20 transition flex items-center justify-center gap-2"><i data-lucide="check-circle-2" class="w-4 h-4"></i> Transfer Pinjaman Sekarang</button>
+                        </div>
+                    </form>
+                    <form id="formRequestLoan" class="hidden max-w-lg space-y-4">
+                        <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-900">💡 Lunasi pinjaman dalam <b>&lt; 3 hari</b> untuk mendapat <b>+10 Skor Kredit</b> dan membuka lencana <b>Teman Terpercaya</b> (Limit naik ke Rp 40.000).</div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-600">Minta Pinjaman ke Siapa?</label>
+                            <select id="reqLenderSelect" class="w-full mt-1 p-2.5 rounded-xl border bg-slate-50 text-sm font-medium" required></select>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-600">Nominal Pinjaman (Rp)</label>
+                                <input type="number" id="reqAmountInput" min="1000" step="500" placeholder="10000" class="w-full mt-1 p-2.5 rounded-xl border bg-slate-50 text-sm font-bold" required>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-600">Keperluan / Catatan</label>
+                                <input type="text" id="reqNoteInput" placeholder="Contoh: Kurang bayar makan siang" class="w-full mt-1 p-2.5 rounded-xl border bg-slate-50 text-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow"><i data-lucide="send" class="w-4 h-4"></i> Kirim Permintaan Pinjaman</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- KONTEN ACCORDION 3: CHAT ANTAR SISWA & KASIR -->
+        <div id="accChatContent" class="accordion-content">
+            <div class="accordion-inner">
+                <div id="chatWindowBox" class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm mt-1 overflow-hidden">
+                    <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <i data-lucide="message-circle" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+                            <h3 class="font-bold text-sm truncate">myKantin Chat</h3>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <button onclick="openCreateGroupModal()" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i> <span>+ Grup</span></button>
+                            <button type="button" id="btnToggleMobileChat" onclick="toggleChatMobileView()" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-emerald-300 transition" title="Perbesar Tampilan Handphone (Mobile View)">
+                                <i id="iconToggleMobileChat" data-lucide="maximize-2" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="if(isChatMobileExpanded) toggleChatMobileView(false); toggleAccordion('chat');" class="text-xs font-bold text-slate-400 hover:text-white px-2">Tutup ✕</button>
+                        </div>
+                    </div>
+                    <div class="chat-grid-body grid grid-cols-1 md:grid-cols-12 h-[450px]">
+                        <div class="chat-sidebar-pane md:col-span-4 border-r bg-white overflow-y-auto divide-y">
+                            <div class="px-3 py-2 bg-amber-50 text-[10px] font-extrabold uppercase tracking-wider text-amber-800">Layanan Kantin</div>
+                            <div id="chatKasirContactBox" class="divide-y"></div>
+                            <div class="px-3 py-2 bg-slate-100 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Grup Obrolan Saya</div>
+                            <div id="chatGroupList" class="divide-y"></div>
+                            <div class="px-3 py-2 bg-slate-100 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex justify-between items-center">
+                                <span>Chat Personal (Teman)</span>
+                                <button onclick="promptRestoreContact()" class="px-2 py-0.5 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-extrabold text-[10px] transition flex items-center gap-0.5">+ ID Teman</button>
+                            </div>
+                            <div id="chatContactList" class="divide-y"></div>
+                        </div>
+                        <div class="chat-room-pane md:col-span-8 flex flex-col h-full relative">
+                            <div id="chatRoomHeader" class="px-4 py-2.5 bg-slate-50 border-b flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <button type="button" id="btnMobileBackToList" onclick="backToMobileContactList()" class="hidden p-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 shrink-0" title="Kembali ke Daftar Chat"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+                                    <div class="min-w-0">
+                                        <p id="chatActiveTitle" class="font-extrabold text-sm text-slate-800 truncate">Pilih teman atau kasir untuk mulai chat</p>
+                                        <p id="chatActiveSub" class="text-[11px] text-slate-500 truncate">Pesan instan antar siswa & kasir myKantin</p>
+                                    </div>
+                                </div>
+                                <div id="chatHeaderActions" class="hidden flex items-center gap-1.5 shrink-0">
+                                    <button id="btnInviteGroupMember" onclick="openInviteGroupModal()" class="hidden px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">+ Anggota</span></button>
+                                    <div class="relative">
+                                        <button type="button" onclick="toggleChatOptionsMenu()" class="p-2 rounded-xl hover:bg-slate-200 text-slate-600 transition" title="Opsi Obrolan"><i data-lucide="more-vertical" class="w-4 h-4"></i></button>
+                                        <div id="chatOptionsDropdown" class="hidden absolute right-0 mt-1.5 w-52 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-30 text-xs font-bold">
+                                            <button type="button" onclick="clearCurrentChat()" class="w-full px-4 py-2.5 text-left text-slate-700 hover:bg-slate-100 flex items-center gap-2"><i data-lucide="eraser" class="w-4 h-4 text-amber-600"></i> Clear Chat (Bersihkan)</button>
+                                            <button type="button" id="optManageGroupMembers" onclick="openManageMembersModal()" class="hidden w-full px-4 py-2.5 text-left text-rose-600 hover:bg-rose-50 flex items-center gap-2"><i data-lucide="user-minus" class="w-4 h-4"></i> Hapus / Kelola Anggota</button>
+                                            <button type="button" id="optDeletePersonalContact" onclick="hideCurrentPersonalContact()" class="hidden w-full px-4 py-2.5 text-left text-rose-600 hover:bg-rose-50 flex items-center gap-2"><i data-lucide="trash-2" class="w-4 h-4"></i> Hapus Teman dari Chat</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="chatMessagesArea" class="flex-1 p-4 overflow-y-auto space-y-2.5 wa-bg">
+                                <div class="h-full flex items-center justify-center text-xs text-slate-500 bg-white/70 rounded-xl p-4 text-center">Pilih <b>Kasir myKantin</b> untuk tanya jajan/deposit, pilih teman, atau klik <b>+ Grup</b>.</div>
+                            </div>
+                            <div id="emojiPickerPanel" class="hidden absolute bottom-16 left-3 right-3 sm:right-auto sm:w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-3 z-30 fade-in">
+                                <div class="flex justify-between items-center border-b pb-1.5 mb-2">
+                                    <span class="text-[11px] font-extrabold text-slate-600">Emotikon Lucu & Kantin ✨</span>
+                                    <button type="button" onclick="toggleEmojiPicker()" class="text-xs text-slate-400 hover:text-slate-700">✕</button>
+                                </div>
+                                <div id="emojiGrid" class="grid grid-cols-6 gap-1.5 text-xl text-center"></div>
+                            </div>
+                            <form id="chatSendForm" class="p-2.5 bg-slate-100 border-t flex items-center gap-2">
+                                <button type="button" id="btnToggleEmoji" onclick="toggleEmojiPicker()" class="w-10 h-10 rounded-full bg-white hover:bg-amber-50 border text-amber-500 flex items-center justify-center shrink-0 transition disabled:opacity-50" title="Pilih Emotikon Lucu" disabled><i data-lucide="smile" class="w-5 h-5"></i></button>
+                                <input type="text" id="chatInputText" placeholder="Ketik pesan atau pilih emotikon..." class="flex-1 px-4 py-2 rounded-full border bg-white text-xs sm:text-sm outline-none focus:border-emerald-500" disabled>
+                                <button type="submit" id="chatSendBtn" class="w-10 h-10 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow disabled:opacity-50" disabled><i data-lucide="send" class="w-4 h-4"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS PRE-ORDER AKTIF SISWA -->
+        <div id="siswaPreorderStatusWrapper" class="hidden bg-white p-4 rounded-2xl border shadow-sm">
+            <p class="text-xs font-extrabold uppercase tracking-wider text-emerald-700 mb-2.5 flex items-center gap-1.5"><i data-lucide="clock" class="w-4 h-4"></i> Status Pre-Order Anda</p>
+            <div id="siswaActivePreorders" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+        </div>
+
+        <!-- Ringkasan Hutang & Piutang -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="bg-white p-5 rounded-2xl border shadow-sm">
+                <h3 class="font-bold text-sm sm:text-base flex items-center gap-2 text-rose-600 pb-3 border-b"><i data-lucide="arrow-up-right" class="w-5 h-5"></i> Pinjaman Saya ke Teman (Hutang)</h3>
+                <div id="myDebtsList" class="mt-4 space-y-3"></div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border shadow-sm">
+                <h3 class="font-bold text-sm sm:text-base flex items-center gap-2 text-emerald-600 pb-3 border-b"><i data-lucide="arrow-down-left" class="w-5 h-5"></i> Dana Saya Dipinjam Teman (Piutang)</h3>
+                <div id="myCreditsList" class="mt-4 space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- Riwayat Struk Digital Siswa -->
+        <div class="bg-white p-5 rounded-2xl border shadow-sm">
+            <h3 class="font-bold text-sm sm:text-base flex items-center gap-2 pb-3 border-b mb-4 text-slate-800"><i data-lucide="receipt" class="w-5 h-5 text-emerald-600"></i> Riwayat Jajan & Struk Digital Saya</h3>
+            <div id="siswaTxHistoryList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        </div>
+    </main>
+
+    <script>
+        let currentLoginRole = 'siswa';
+        let session = null;
+
+        function kasirHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'x-kasir-token': session && session.token ? session.token : ''
+            };
+        }
+
+        let appData = { students: [], products: [], loans: [], transactions: [], allItems: [], preorders: [] };
+        let chatData = { groups: [], messages: [], hiddenIds: [] };
+        let activeChat = null;
+        let activeKasirChatStudentId = null;
+        let chatPollInterval = null;
+        let lastKnownMaxMsgId = null;
+        let isChatMobileExpanded = false;
+        let qrisPollTimer = null;
+
+        // State Filter Kategori Cerdas (Kasir & Siswa)
+        let kasirCatFilter = { main: 'ALL', sub: 'ALL' };
+        let siswaCatFilter = { main: 'ALL', sub: 'ALL' };
+
+        let cart = [];
+        let preorderCart = [];
+        let html5QrcodeScanner = null;
+        let revenueChartInstance = null;
+        let activeAccordion = null;
+
+        function resetDepositModalView() {
+            if (qrisPollTimer) clearInterval(qrisPollTimer);
+            document.getElementById('qrisDepositStep1').classList.remove('hidden');
+            document.getElementById('qrisDepositStep2').classList.add('hidden');
+        }
+
+        function openDepositModal() {
+            if (!session || session.role !== 'siswa') return;
+            resetDepositModalView();
+            document.getElementById('depStudentId').innerText = session.user.id;
+            document.getElementById('depositGuideModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeDepositModal() {
+            if (qrisPollTimer) clearInterval(qrisPollTimer);
+            document.getElementById('depositGuideModal').classList.add('hidden');
+        }
+
+        async function createQrisDeposit() {
+            const amount = parseInt(document.getElementById('qrisDepositAmount').value);
+            const btn = document.getElementById('btnGenerateQris');
+            btn.disabled = true;
+            btn.innerText = 'Membuat...';
+
+            try {
+                const res = await fetch('/api/qris/deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId: session.user.id, amount })
+                });
+                const data = await res.json();
+                btn.disabled = false;
+                btn.innerText = 'Buat QRIS →';
+
+                if (!res.ok) return showToast(data.error, true);
+
+                document.getElementById('qrisDepositStep1').classList.add('hidden');
+                document.getElementById('qrisDepositStep2').classList.remove('hidden');
+                document.getElementById('qrisShowAmount').innerText = `Rp ${amount.toLocaleString()}`;
+
+                const canvas = document.getElementById('qrisDynamicCanvas');
+                canvas.innerHTML = '';
+                new QRCode(canvas, { text: data.qris_string, width: 175, height: 175 });
+
+                if (qrisPollTimer) clearInterval(qrisPollTimer);
+                qrisPollTimer = setInterval(async () => {
+                    const stRes = await fetch(`/api/qris/deposit/${data.order_id}`);
+                    if (!stRes.ok) return;
+                    const stData = await stRes.json();
+                    if (stData.status === 'SETTLEMENT') {
+                        clearInterval(qrisPollTimer);
+                        closeDepositModal();
+                        showToast(`🎉 Deposit QRIS Rp ${amount.toLocaleString()} berhasil masuk ke dompet!`);
+                        await refreshData();
+                    }
+                }, 2000);
+            } catch (e) {
+                btn.disabled = false;
+                btn.innerText = 'Buat QRIS →';
+                showToast('Gagal menghubungi server QRIS!', true);
+            }
+        }
+
+
+
+
+        const CUTE_EMOJIS = [
+            '😂', '🤣', '🥹', '😍', '🥰', '😎',
+            '🥳', '🤩', '🤪', '😜', '🤗', '🤭',
+            '😴', '🤤', '😭', '😱', '🤯', '🥺',
+            '👍', '🙌', '👏', '🙏', '✌️', '🤝',
+            '❤️', '🔥', '✨', '🎉', '💯', '💸',
+            '🍛', '🍗', '🧋', '🍩', '🍟', '🥤'
+        ];
+
+        const KASIR_QUICK_TEMPLATES = [
+            'Halo! Stok jajan masih tersedia, silakan Pre-Order ya 😊',
+            'Pesanan kamu sudah siap diambil di meja kasir! 🍛',
+            'Silakan datang ke meja kasir untuk proses Deposit / Top-Up saldo 🪙',
+            'Mohon maaf, menu tersebut baru saja habis stoknya 🙏',
+            'Terima kasih sudah berbelanja di myKantin! ✨'
+        ];
+
+        lucide.createIcons();
+
+        // ==================== KATEGORISASI CERDAS (MINUMAN: ES/BIASA & MAKANAN: CEMILAN/BERAT) ====================
+        function getSmartCategoryInfo(product) {
+            const rawCat = (product.category || '').toLowerCase();
+            const rawName = (product.name || '').toLowerCase();
+
+            // 1. Cek jika kategori sudah terstruktur atau mengandung kata kunci Minuman
+            const isDrink = rawCat.includes('minuman') ||
+                /\b(es|teh|kopi|susu|air|mineral|jus|jeruk|sirup|boba|pop ice|nutrisari|milo|drink|soda|yakult|yogurt)\b/.test(rawName);
+
+            if (isDrink) {
+                const isIce = rawCat.includes('es') || rawCat.includes('dingin') ||
+                    /\b(es|ice|dingin|boba|pop ice|slush|float|frappe)\b/.test(rawName);
+                return isIce
+                    ? {
+                        main: 'Minuman',
+                        sub: 'Es',
+                        label: '🧊 Minuman • Es',
+                        badgeClass: 'bg-sky-100 text-sky-800 border border-sky-200'
+                    }
+                    : {
+                        main: 'Minuman',
+                        sub: 'Biasa',
+                        label: '🥤 Minuman • Biasa',
+                        badgeClass: 'bg-cyan-100 text-cyan-800 border border-cyan-200'
+                    };
+            }
+
+            // 2. Kategori Makanan (Cemilan vs Makanan Berat)
+            const isSnack = rawCat.includes('cemilan') || rawCat.includes('snack') ||
+                /\b(roti|cireng|cilok|batagor|siomay|gorengan|risol|pastel|keripik|chiki|biskuit|wafer|coklat|permen|donat|pisang|kentang|kue|piscok|martabak mini|sempol|tahu krispi)\b/.test(rawName);
+
+            return isSnack
+                ? {
+                    main: 'Makanan',
+                    sub: 'Cemilan',
+                    label: '🍩 Makanan • Cemilan',
+                    badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200'
+                }
+                : {
+                    main: 'Makanan',
+                    sub: 'Makanan Berat',
+                    label: '🍛 Makanan • Makanan Berat',
+                    badgeClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                };
+        }
+
+        function filterProductsBySmartCategory(products, filterObj) {
+            return products.filter(p => {
+                const info = getSmartCategoryInfo(p);
+                if (filterObj.main !== 'ALL' && info.main !== filterObj.main) return false;
+                if (filterObj.sub !== 'ALL' && info.sub !== filterObj.sub) return false;
+                return true;
+            });
+        }
+
+        function setSmartCategoryFilter(target, main, sub = 'ALL') {
+            if (target === 'kasir') {
+                kasirCatFilter = { main, sub };
+                renderKasirSmartCategoryBar();
+                renderKasirProducts();
+            } else {
+                siswaCatFilter = { main, sub };
+                renderSiswaSmartCategoryBar();
+                renderSiswaPreorderMenu();
+            }
+        }
+
+        function buildSmartCategoryBarHTML(target, currentFilter) {
+            const counts = {
+                ALL: appData.products.length,
+                Minuman: 0,
+                Es: 0,
+                Biasa: 0,
+                Makanan: 0,
+                Cemilan: 0,
+                'Makanan Berat': 0
+            };
+
+            appData.products.forEach(p => {
+                const info = getSmartCategoryInfo(p);
+                counts[info.main]++;
+                counts[info.sub]++;
+            });
+
+            const mainBtn = (key, icon, label) => {
+                const active = currentFilter.main === key;
+                return `
+                    <button type="button" onclick="setSmartCategoryFilter('${target}', '${key}', 'ALL')" class="px-3 py-1.5 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 ${active ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}">
+                        <span>${icon}</span> <span>${label}</span>
+                        <span class="px-1.5 py-0.2 rounded-full text-[10px] ${active ? 'bg-white/20 text-white' : 'bg-white text-slate-600'}">${counts[key]}</span>
+                    </button>
+                `;
+            };
+
+            let subBarHtml = '';
+            if (currentFilter.main === 'Minuman') {
+                subBarHtml = `
+                    <div class="flex flex-wrap items-center gap-1.5 pl-1 pt-1 border-t border-slate-100">
+                        <span class="text-[10px] font-extrabold uppercase text-slate-400 mr-1">Jenis Minuman:</span>
+                        <button type="button" onclick="setSmartCategoryFilter('${target}', 'Minuman', 'ALL')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${currentFilter.sub === 'ALL' ? 'bg-sky-600 text-white' : 'bg-sky-50 text-sky-700 hover:bg-sky-100'}">Semua (${counts.Minuman})</button>
+                        <button type="button" onclick="setSmartCategoryFilter('${target}', 'Minuman', 'Es')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${currentFilter.sub === 'Es' ? 'bg-sky-600 text-white' : 'bg-sky-50 text-sky-700 hover:bg-sky-100'}">🧊 Es (${counts.Es})</button>
+                        <button type="button" onclick="setSmartCategoryFilter('${target}', 'Minuman', 'Biasa')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${currentFilter.sub === 'Biasa' ? 'bg-cyan-600 text-white' : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'}">🥤 Biasa (${counts.Biasa})</button>
+                    </div>
+                `;
+            } else if (currentFilter.main === 'Makanan') {
+                subBarHtml = `
+                    <div class="flex flex-wrap items-center gap-1.5 pl-1 pt-1 border-t border-slate-100">
+                        <span class="text-[10px] font-extrabold uppercase text-slate-400 mr-1">Jenis Makanan:</span>
+                        <button type="button" onclick="setSmartCategoryFilter('${target}', 'Makanan', 'ALL')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${currentFilter.sub === 'ALL' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}">Semua (${counts.Makanan})</button>
+                        <button type="button" onclick="setSmartCategoryFilter('${target}', 'Makanan', 'Cemilan')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${currentFilter.sub === 'Cemilan' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-800 hover:bg-amber-100'}">🍩 Cemilan (${counts.Cemilan})</button>
+                        <button type="button" onclick="setSmartCategoryFilter('${target}', 'Makanan', 'Makanan Berat')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${currentFilter.sub === 'Makanan Berat' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'}">🍛 Makanan Berat (${counts['Makanan Berat']})</button>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="flex flex-wrap gap-1.5">
+                    ${mainBtn('ALL', '✨', 'Semua Menu')}
+                    ${mainBtn('Minuman', '🧊', 'Minuman')}
+                    ${mainBtn('Makanan', '🍛', 'Makanan')}
+                </div>
+                ${subBarHtml}
+            `;
+        }
+
+        function renderKasirSmartCategoryBar() {
+            document.getElementById('kasirSmartCategoryBar').innerHTML = buildSmartCategoryBarHTML('kasir', kasirCatFilter);
+        }
+
+        function renderSiswaSmartCategoryBar() {
+            document.getElementById('siswaSmartCategoryBar').innerHTML = buildSmartCategoryBarHTML('siswa', siswaCatFilter);
+        }
+
+        function renderSiswaPreorderMenu() {
+            const filtered = filterProductsBySmartCategory(appData.products, siswaCatFilter);
+            const menuEl = document.getElementById('siswaPreorderMenu');
+
+            if (filtered.length === 0) {
+                menuEl.innerHTML = `<div class="col-span-2 p-6 text-center text-xs text-slate-400 border border-dashed rounded-xl">Tidak ada menu pada kategori ini.</div>`;
+                return;
+            }
+
+            menuEl.innerHTML = filtered.map(p => {
+                const catInfo = getSmartCategoryInfo(p);
+                return `
+                    <div onclick="addToPreorder('${p.barcode}')" class="p-3 rounded-xl border hover:border-emerald-500 hover:bg-emerald-50/40 cursor-pointer transition flex flex-col justify-between gap-2">
+                        <div class="flex justify-between items-start gap-1">
+                            <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-md ${catInfo.badgeClass}">${catInfo.label}</span>
+                            <span class="text-[10px] font-bold ${p.stock < 10 ? 'text-red-500' : 'text-slate-400'}">Stok: ${p.stock}</span>
+                        </div>
+                        <div class="flex justify-between items-end gap-2">
+                            <p class="font-bold text-xs text-slate-800 leading-snug">${p.name}</p>
+                            <span class="font-extrabold text-emerald-600 text-xs shrink-0">Rp ${p.price.toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==================== EMOJI & TOAST ====================
+        function initEmojiGrid() {
+            document.getElementById('emojiGrid').innerHTML = CUTE_EMOJIS.map(em => `
+                <button type="button" onclick="insertEmoji('${em}')" class="p-1.5 rounded-xl hover:bg-slate-100 active:scale-90 transition">${em}</button>
+            `).join('');
+        }
+        initEmojiGrid();
+
+        function toggleEmojiPicker() { document.getElementById('emojiPickerPanel').classList.toggle('hidden'); }
+        function insertEmoji(emoji) {
+            const input = document.getElementById('chatInputText');
+            input.value += emoji;
+            input.focus();
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.className = `fixed top-5 right-5 z-[75] px-5 py-3.5 rounded-xl shadow-xl text-sm font-bold text-white flex items-center gap-2 max-w-md ${isError ? 'bg-red-600' : 'bg-emerald-600'}`;
+            t.innerHTML = `<span>${msg}</span>`;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 4500);
+        }
+
+        // ==================== MOBILE CHAT EXPAND ====================
+        function toggleChatMobileView(forceState = null) {
+            isChatMobileExpanded = forceState !== null ? forceState : !isChatMobileExpanded;
+            const box = document.getElementById('chatWindowBox');
+            const backdrop = document.getElementById('chatMobileBackdrop');
+            const icon = document.getElementById('iconToggleMobileChat');
+            const btn = document.getElementById('btnToggleMobileChat');
+            const backBtn = document.getElementById('btnMobileBackToList');
+
+            if (isChatMobileExpanded) {
+                backdrop.classList.remove('hidden');
+                requestAnimationFrame(() => backdrop.classList.remove('opacity-0'));
+                box.classList.add('chat-mobile-expanded');
+                if (activeChat) box.classList.add('mobile-has-active');
+                else box.classList.remove('mobile-has-active');
+                icon.setAttribute('data-lucide', 'minimize-2');
+                btn.title = 'Kembalikan ke Tampilan Semula';
+                backBtn.classList.remove('hidden');
+            } else {
+                backdrop.classList.add('opacity-0');
+                setTimeout(() => backdrop.classList.add('hidden'), 280);
+                box.classList.remove('chat-mobile-expanded', 'mobile-has-active');
+                icon.setAttribute('data-lucide', 'maximize-2');
+                btn.title = 'Perbesar Tampilan Handphone (Mobile View)';
+                backBtn.classList.add('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        function backToMobileContactList() {
+            document.getElementById('chatWindowBox').classList.remove('mobile-has-active');
+        }
+
+        // ==================== MODAL DEPOSIT & QR ZOOM ====================
+        function openDepositModal() {
+            if (!session || session.role !== 'siswa') return;
+            document.getElementById('depStudentId').innerText = session.user.id;
+            document.getElementById('depositGuideModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeDepositModal() { document.getElementById('depositGuideModal').classList.add('hidden'); }
+
+        function goToKasirChatForDeposit() {
+            closeDepositModal();
+            toggleAccordion('chat', true);
+            selectChatRoom('personal', 'KASIR01', 'Kasir myKantin', 'Layanan Kantin & Deposit Saldo');
+            const inp = document.getElementById('chatInputText');
+            inp.value = `Halo Kak Kasir, saya ${session.user.name} (${session.user.id}) ingin melakukan deposit saldo dompet.`;
+            inp.focus();
+        }
+
+        function openQrZoomModal() {
+            if (!session || session.role !== 'siswa') return;
+            const me = appData.students.find(s => s.id === session.user.id) || session.user;
+            document.getElementById('qrZoomIdText').innerText = me.id;
+            document.getElementById('qrZoomNameText').innerText = `${me.name} • ${me.kelas}`;
+            const zoomContainer = document.getElementById('studentQrZoomBox');
+            zoomContainer.innerHTML = '';
+            new QRCode(zoomContainer, { text: me.id, width: 210, height: 210, colorDark: "#0f172a", colorLight: "#ffffff" });
+            document.getElementById('qrZoomModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeQrZoomModal() { document.getElementById('qrZoomModal').classList.add('hidden'); }
+
+        // ==================== CUSTOM DIALOG ====================
+        function openCustomDialog({ title, message, requirePin = false, confirmText = 'Ya, Lanjutkan', isDanger = false }) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('customDialogModal');
+                const iconBox = document.getElementById('dialogIconBox');
+                const pinWrap = document.getElementById('dialogPinWrapper');
+                const pinInput = document.getElementById('dialogPinInput');
+                const confirmBtn = document.getElementById('dialogConfirmBtn');
+                const cancelBtn = document.getElementById('dialogCancelBtn');
+
+                document.getElementById('dialogTitle').innerText = title;
+                document.getElementById('dialogMessage').innerText = message;
+                confirmBtn.innerText = confirmText;
+
+                if (isDanger) {
+                    iconBox.className = 'w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner';
+                    confirmBtn.className = 'py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-lg shadow-rose-600/20 transition';
+                } else {
+                    iconBox.className = 'w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner';
+                    confirmBtn.className = 'py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 transition';
+                }
+
+                pinInput.value = '';
+                pinWrap.classList.toggle('hidden', !requirePin);
+                modal.classList.remove('hidden');
+                if (requirePin) setTimeout(() => pinInput.focus(), 100);
+                lucide.createIcons();
+
+                const cleanup = (result) => {
+                    modal.classList.add('hidden');
+                    confirmBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    pinInput.onkeydown = null;
+                    resolve(result);
+                };
+
+                confirmBtn.onclick = () => cleanup(requirePin ? pinInput.value.trim() : true);
+                cancelBtn.onclick = () => cleanup(null);
+                pinInput.onkeydown = (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); cleanup(pinInput.value.trim()); }
+                };
+            });
+        }
+
+        // ==================== UNREAD BADGES & CHAT ====================
+        function getLastReadMap() {
+            if (!session) return {};
+            try { return JSON.parse(localStorage.getItem(`mykantin_read_${session.user.id}`) || '{}'); } catch { return {}; }
+        }
+
+        function markRoomAsRead(type, id) {
+            if (!session) return;
+            const map = getLastReadMap();
+            const maxId = chatData.messages.reduce((max, m) => Math.max(max, m.id), 0);
+            map[`${type}_${id}`] = maxId;
+            localStorage.setItem(`mykantin_read_${session.user.id}`, JSON.stringify(map));
+            updateUnreadBadges();
+        }
+
+        function getUnreadCountForRoom(type, id) {
+            if (!session) return 0;
+            const meId = session.user.id;
+            const map = getLastReadMap();
+            const lastReadId = map[`${type}_${id}`] || 0;
+            return chatData.messages.filter(m => {
+                if (m.id <= lastReadId) return false;
+                if (m.sender_id === meId || m.sender_id === 'SYSTEM') return false;
+                if (type === 'group') return m.chat_type === 'group' && m.target_id === String(id);
+                return m.chat_type === 'personal' && m.sender_id === String(id) && m.target_id === meId;
+            }).length;
+        }
+
+        function updateUnreadBadges() {
+            if (!session) return;
+            if (session.role === 'kasir') {
+                let kasirUnread = 0;
+                appData.students.forEach(s => { kasirUnread += getUnreadCountForRoom('personal', s.id); });
+                const kBadge = document.getElementById('kasirChatUnreadBadge');
+                if (kasirUnread > 0) { kBadge.innerText = kasirUnread; kBadge.classList.remove('hidden'); }
+                else kBadge.classList.add('hidden');
+                return;
+            }
+
+            let totalUnread = getUnreadCountForRoom('personal', 'KASIR01');
+            chatData.groups.forEach(g => { totalUnread += getUnreadCountForRoom('group', g.id); });
+            const visibleFriends = appData.students.filter(s => s.id !== session.user.id && !(chatData.hiddenIds || []).includes(s.id));
+            visibleFriends.forEach(f => { totalUnread += getUnreadCountForRoom('personal', f.id); });
+
+            const badge = document.getElementById('globalUnreadBadge');
+            const dot = document.getElementById('globalUnreadDot');
+            if (totalUnread > 0) {
+                badge.innerText = `${totalUnread} Baru`;
+                badge.classList.remove('hidden');
+                dot.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+                dot.classList.add('hidden');
+            }
+        }
+
+        function toggleAccordion(type, forceOpen = false) {
+            const map = {
+                preorder: { content: 'accPreorderContent', chev: 'chevPreorder', btn: 'btnAccPreorder', ring: 'ring-emerald-200' },
+                loan: { content: 'accLoanContent', chev: 'chevLoan', btn: 'btnAccLoan', ring: 'ring-rose-200' },
+                chat: { content: 'accChatContent', chev: 'chevChat', btn: 'btnAccChat', ring: 'ring-slate-300' }
+            };
+            if (!forceOpen && activeAccordion === type) {
+                activeAccordion = null;
+                Object.values(map).forEach(m => {
+                    document.getElementById(m.content).classList.remove('open');
+                    document.getElementById(m.chev).classList.remove('rotate-180');
+                    document.getElementById(m.btn).classList.remove('ring-4', m.ring);
+                });
+                return;
+            }
+            activeAccordion = type;
+            Object.entries(map).forEach(([key, m]) => {
+                const isTarget = key === type;
+                document.getElementById(m.content).classList.toggle('open', isTarget);
+                document.getElementById(m.chev).classList.toggle('rotate-180', isTarget);
+                if (isTarget) document.getElementById(m.btn).classList.add('ring-4', m.ring);
+                else document.getElementById(m.btn).classList.remove('ring-4', m.ring);
+            });
+            if (type === 'chat') loadChatData();
+        }
+
+        function reorderTransaction(txId) {
+            const tx = appData.transactions.find(t => t.id === txId);
+            if (!tx || !tx.items || tx.items.length === 0) return showToast('Detail item transaksi tidak ditemukan!', true);
+            preorderCart = [];
+            let unavailableItems = [];
+            tx.items.forEach(item => {
+                const prod = appData.products.find(p => p.barcode === item.barcode);
+                if (prod && prod.stock > 0) preorderCart.push({ ...prod, qty: Math.min(item.qty, prod.stock) });
+                else unavailableItems.push(item.product_name);
+            });
+            if (preorderCart.length === 0) return showToast('Maaf, semua menu pada struk ini sedang habis stoknya!', true);
+            renderPreorderCart();
+            toggleAccordion('preorder', true);
+            document.getElementById('studentAccordionAnchor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            showToast(unavailableItems.length > 0 ? `Menu dimasukkan ke Pre-Order (Stok habis: ${unavailableItems.join(', ')})` : `Menu dari Struk #${tx.id} siap di Pre-Order!`);
+        }
+
+        async function loadChatData(isPolling = false) {
+            if (!session) return;
+            const res = await fetch(`/api/chat/${session.user.id}`);
+            const newChatData = await res.json();
+
+            const maxId = newChatData.messages.reduce((max, m) => Math.max(max, m.id), 0);
+            if (isPolling && lastKnownMaxMsgId !== null && maxId > lastKnownMaxMsgId) {
+                const freshMsgs = newChatData.messages.filter(m => m.id > lastKnownMaxMsgId && m.sender_id !== session.user.id && m.sender_id !== 'SYSTEM');
+                freshMsgs.forEach(m => {
+                    if (session.role === 'kasir') {
+                        if (m.chat_type === 'personal' && m.target_id === 'KASIR01') {
+                            const st = appData.students.find(s => s.id === m.sender_id);
+                            showToast(`💬 Pesan dari ${st ? st.name : m.sender_id}: "${m.message}"`);
+                        }
+                    } else {
+                        const isForMePersonal = m.chat_type === 'personal' && m.target_id === session.user.id;
+                        const myGroup = newChatData.groups.find(g => String(g.id) === m.target_id);
+                        const isForMyGroup = m.chat_type === 'group' && myGroup;
+                        if (isForMePersonal || isForMyGroup) {
+                            const isCurrentlyViewing = activeAccordion === 'chat' && activeChat && (
+                                (m.chat_type === 'personal' && activeChat.type === 'personal' && activeChat.id === m.sender_id) ||
+                                (m.chat_type === 'group' && activeChat.type === 'group' && activeChat.id === m.target_id)
+                            );
+                            if (!isCurrentlyViewing) {
+                                const sName = m.sender_id === 'KASIR01' ? 'Kasir myKantin' : (appData.students.find(s => s.id === m.sender_id)?.name || m.sender_id);
+                                const title = isForMyGroup ? `[Grup ${myGroup.name}] ${sName}` : `Pesan baru dari ${sName}`;
+                                showToast(`💬 ${title}: "${m.message}"`);
+                            }
+                        }
+                    }
+                });
+            }
+            lastKnownMaxMsgId = maxId;
+            chatData = newChatData;
+
+            if (session.role === 'kasir') {
+                if (activeKasirChatStudentId) {
+                    markRoomAsRead('personal', activeKasirChatStudentId);
+                    renderKasirChatMessages();
+                }
+                renderKasirChatSidebar();
+                updateUnreadBadges();
+                lucide.createIcons();
+                return;
+            }
+
+            if (activeChat && activeChat.type === 'group') {
+                const currentGrp = chatData.groups.find(g => String(g.id) === activeChat.id);
+                if (!currentGrp) resetActiveChatRoom();
+                else {
+                    const memberIds = JSON.parse(currentGrp.members_json || '[]');
+                    const memberNames = memberIds.map(id => appData.students.find(s => s.id === id)?.name.split(' ')[0] || id).join(', ');
+                    activeChat.sub = `${memberIds.length} Anggota: ${memberNames}`;
+                    document.getElementById('chatActiveSub').innerText = activeChat.sub;
+                }
+            }
+
+            if (activeAccordion === 'chat' && activeChat) {
+                markRoomAsRead(activeChat.type, activeChat.id);
+                renderChatMessages();
+            }
+            renderChatSidebar();
+            updateUnreadBadges();
+            lucide.createIcons();
+        }
+
+        // ==================== CHAT KASIR ====================
+        function renderKasirChatSidebar() {
+            const listEl = document.getElementById('kasirStudentChatList');
+            listEl.innerHTML = (appData.students || []).map(st => {
+                const isSelected = activeKasirChatStudentId === st.id;
+                const unread = getUnreadCountForRoom('personal', st.id);
+                const roomMsgs = chatData.messages.filter(m =>
+                    m.chat_type === 'personal' && ((m.sender_id === st.id && m.target_id === 'KASIR01') || (m.sender_id === 'KASIR01' && m.target_id === st.id))
+                );
+                const lastMsg = roomMsgs.length > 0 ? roomMsgs[roomMsgs.length - 1].message : 'Belum ada pesan';
+                return `
+                    <div onclick="selectKasirStudentChat('${st.id}')" class="p-3.5 cursor-pointer transition flex items-center justify-between gap-2 ${isSelected ? 'bg-emerald-50 border-l-4 border-emerald-600' : 'hover:bg-white'}">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <p class="font-extrabold text-xs text-slate-800 truncate">${st.name}</p>
+                                <span class="text-[10px] font-bold text-slate-400">(${st.id})</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 truncate mt-0.5">${lastMsg}</p>
+                        </div>
+                        ${unread > 0 ? `<span class="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-extrabold shrink-0">${unread}</span>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectKasirStudentChat(studentId) {
+            const st = appData.students.find(s => s.id === studentId);
+            if (!st) return;
+            activeKasirChatStudentId = studentId;
+            document.getElementById('kasirChatActiveName').innerText = `${st.name} (${st.id} • ${st.kelas})`;
+            document.getElementById('kasirChatActiveSub').innerText = `Saldo Dompet: Rp ${st.balance.toLocaleString()}`;
+            document.getElementById('btnKasirClearChat').classList.remove('hidden');
+            document.getElementById('kasirQuickTemplatesBox').classList.remove('hidden');
+            document.getElementById('kasirChatInput').disabled = false;
+            document.getElementById('kasirChatSendBtn').disabled = false;
+
+            document.getElementById('kasirTemplateButtons').innerHTML = KASIR_QUICK_TEMPLATES.map(tpl => `
+                <button type="button" onclick="sendKasirQuickTemplate('${tpl.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-white hover:bg-emerald-600 text-emerald-800 hover:text-white border border-emerald-200 text-[11px] font-semibold transition text-left">${tpl}</button>
+            `).join('');
+
+            markRoomAsRead('personal', studentId);
+            renderKasirChatSidebar();
+            renderKasirChatMessages();
+            lucide.createIcons();
+        }
+
+        function renderKasirChatMessages() {
+            if (!activeKasirChatStudentId) return;
+            const area = document.getElementById('kasirChatMessagesArea');
+            const filtered = chatData.messages.filter(m =>
+                m.chat_type === 'personal' && ((m.sender_id === 'KASIR01' && m.target_id === activeKasirChatStudentId) || (m.sender_id === activeKasirChatStudentId && m.target_id === 'KASIR01'))
+            );
+            if (filtered.length === 0) {
+                area.innerHTML = `<div class="text-center text-xs text-slate-500 bg-white/80 rounded-xl p-3">Belum ada percakapan dengan siswa ini.</div>`;
+                return;
+            }
+            area.innerHTML = filtered.map(m => {
+                const isKasir = m.sender_id === 'KASIR01';
+                const timeStr = (m.created_at || '').split(' ')[1]?.slice(0, 5) || '';
+                return `
+                    <div class="flex flex-col ${isKasir ? 'items-end' : 'items-start'}">
+                        <div class="max-w-[78%] px-3.5 py-2 rounded-2xl shadow-sm text-xs ${isKasir ? 'bg-[#d9fdd3] text-slate-800 rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none'}">
+                            <p class="leading-relaxed break-words text-[13px]">${m.message}</p>
+                            <p class="text-[9px] text-slate-400 text-right mt-1">${timeStr}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            area.scrollTop = area.scrollHeight;
+        }
+
+        async function sendKasirQuickTemplate(text) {
+            if (!activeKasirChatStudentId) return;
+            await fetch('/api/chat/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatType: 'personal', targetId: activeKasirChatStudentId, senderId: 'KASIR01', message: text })
+            });
+            await loadChatData();
+        }
+
+        document.getElementById('kasirChatSendForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!activeKasirChatStudentId) return;
+            const inp = document.getElementById('kasirChatInput');
+            const text = inp.value.trim();
+            if (!text) return;
+            inp.value = '';
+            await sendKasirQuickTemplate(text);
+        });
+
+        async function clearKasirStudentChat() {
+            if (!activeKasirChatStudentId) return;
+            const ok = await openCustomDialog({ title: 'Bersihkan Chat Siswa?', message: 'Riwayat obrolan dengan siswa ini akan dihapus permanen.', confirmText: 'Bersihkan', isDanger: true });
+            if (!ok) return;
+            await fetch('/api/chat/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatType: 'personal', targetId: activeKasirChatStudentId, userId: 'KASIR01' })
+            });
+            showToast('Chat siswa dibersihkan.');
+            await loadChatData();
+        }
+
+        // ==================== CHAT SISWA ====================
+        function resetActiveChatRoom() {
+            activeChat = null;
+            document.getElementById('chatWindowBox').classList.remove('mobile-has-active');
+            document.getElementById('chatActiveTitle').innerText = 'Pilih teman atau kasir untuk mulai chat';
+            document.getElementById('chatActiveSub').innerText = 'Pesan instan antar siswa & kasir myKantin';
+            document.getElementById('chatHeaderActions').classList.add('hidden');
+            document.getElementById('chatOptionsDropdown').classList.add('hidden');
+            document.getElementById('emojiPickerPanel').classList.add('hidden');
+            document.getElementById('chatInputText').disabled = true;
+            document.getElementById('chatSendBtn').disabled = true;
+            document.getElementById('btnToggleEmoji').disabled = true;
+            document.getElementById('chatMessagesArea').innerHTML = `<div class="h-full flex items-center justify-center text-xs text-slate-500 bg-white/70 rounded-xl p-4 text-center">Pilih <b>Kasir myKantin</b> untuk tanya jajan/deposit, pilih teman, atau klik <b>+ Grup</b>.</div>`;
+        }
+
+        function renderChatSidebar() {
+            const meId = session.user.id;
+            const hiddenIds = chatData.hiddenIds || [];
+            const friends = appData.students.filter(s => s.id !== meId && !hiddenIds.includes(s.id));
+
+            const kasirUnread = getUnreadCountForRoom('personal', 'KASIR01');
+            const isKasirSelected = activeChat && activeChat.type === 'personal' && activeChat.id === 'KASIR01';
+            document.getElementById('chatKasirContactBox').innerHTML = `
+                <div onclick="selectChatRoom('personal', 'KASIR01', 'Kasir myKantin', 'Tanya Stok Jajan, Pesanan & Deposit Saldo')" class="p-3 cursor-pointer flex items-center gap-3 transition ${isKasirSelected ? 'bg-amber-100/70 border-l-4 border-amber-500' : 'hover:bg-amber-50/50'}">
+                    <div class="w-9 h-9 rounded-full bg-amber-500 text-white font-extrabold flex items-center justify-center text-xs shrink-0 shadow-sm"><i data-lucide="store" class="w-4 h-4"></i></div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex justify-between items-center gap-1">
+                            <p class="font-extrabold text-xs text-slate-900 truncate">Kasir myKantin ✅</p>
+                            ${kasirUnread > 0 ? `<span class="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-extrabold">${kasirUnread}</span>` : ''}
+                        </div>
+                        <p class="text-[10px] text-amber-800 font-semibold truncate">Tanya jajan & konfirmasi deposit</p>
+                    </div>
+                </div>
+            `;
+
+            const groupListEl = document.getElementById('chatGroupList');
+            groupListEl.innerHTML = chatData.groups.length === 0
+                ? `<p class="p-3 text-[11px] text-slate-400 italic">Belum ada grup. Klik "+ Grup".</p>`
+                : chatData.groups.map(g => {
+                    const isSelected = activeChat && activeChat.type === 'group' && activeChat.id === String(g.id);
+                    const members = JSON.parse(g.members_json || '[]');
+                    const unread = getUnreadCountForRoom('group', g.id);
+                    return `
+                        <div onclick="selectChatRoom('group', '${g.id}', '${g.name.replace(/'/g, "\\'")}')" class="p-3 cursor-pointer flex items-center gap-3 transition ${isSelected ? 'bg-emerald-50 border-l-4 border-emerald-600' : 'hover:bg-slate-50'}">
+                            <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center text-xs shrink-0"><i data-lucide="users" class="w-4 h-4"></i></div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex justify-between items-center gap-1">
+                                    <p class="font-bold text-xs text-slate-800 truncate">${g.name}</p>
+                                    ${unread > 0 ? `<span class="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold">${unread}</span>` : ''}
+                                </div>
+                                <p class="text-[10px] text-slate-500">${members.length} Anggota Grup</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            const contactListEl = document.getElementById('chatContactList');
+            contactListEl.innerHTML = friends.length === 0
+                ? `<p class="p-3 text-[11px] text-slate-400 italic">Daftar teman kosong. Klik "+ ID Teman" untuk menambah.</p>`
+                : friends.map(f => {
+                    const isSelected = activeChat && activeChat.type === 'personal' && activeChat.id === f.id;
+                    const initials = f.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+                    const unread = getUnreadCountForRoom('personal', f.id);
+                    return `
+                        <div onclick="selectChatRoom('personal', '${f.id}', '${f.name.replace(/'/g, "\\'")}', '${f.kelas} • ${f.id}')" class="p-3 cursor-pointer flex items-center gap-3 transition ${isSelected ? 'bg-emerald-50 border-l-4 border-emerald-600' : 'hover:bg-slate-50'}">
+                            <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 font-extrabold flex items-center justify-center text-xs shrink-0">${initials}</div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex justify-between items-center gap-1">
+                                    <p class="font-bold text-xs text-slate-800 truncate">${f.name} ${f.isTrusted ? '🏆' : ''}</p>
+                                    ${unread > 0 ? `<span class="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold">${unread}</span>` : ''}
+                                </div>
+                                <p class="text-[10px] text-slate-500">${f.kelas} • ${f.id}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function selectChatRoom(type, id, name, sub = '') {
+            if (type === 'group') {
+                const grp = chatData.groups.find(g => String(g.id) === String(id));
+                if (grp) {
+                    const memberIds = JSON.parse(grp.members_json || '[]');
+                    const memberNames = memberIds.map(mid => appData.students.find(s => s.id === mid)?.name.split(' ')[0] || mid).join(', ');
+                    sub = `${memberIds.length} Anggota: ${memberNames}`;
+                }
+            }
+            activeChat = { type, id: String(id), name, sub };
+            if (isChatMobileExpanded) document.getElementById('chatWindowBox').classList.add('mobile-has-active');
+
+            document.getElementById('chatActiveTitle').innerText = name;
+            document.getElementById('chatActiveSub').innerText = sub;
+            document.getElementById('chatInputText').disabled = false;
+            document.getElementById('chatSendBtn').disabled = false;
+            document.getElementById('btnToggleEmoji').disabled = false;
+            document.getElementById('chatHeaderActions').classList.remove('hidden');
+            document.getElementById('chatOptionsDropdown').classList.add('hidden');
+
+            const isKasirRoom = type === 'personal' && String(id) === 'KASIR01';
+            document.getElementById('btnInviteGroupMember').classList.toggle('hidden', type !== 'group');
+            document.getElementById('optManageGroupMembers').classList.toggle('hidden', type !== 'group');
+            document.getElementById('optDeletePersonalContact').classList.toggle('hidden', type !== 'personal' || isKasirRoom);
+
+            markRoomAsRead(type, id);
+            document.getElementById('chatInputText').focus();
+            renderChatSidebar();
+            renderChatMessages();
+            lucide.createIcons();
+        }
+
+        function toggleChatOptionsMenu() {
+            document.getElementById('chatOptionsDropdown').classList.toggle('hidden');
+            lucide.createIcons();
+        }
+
+        async function clearCurrentChat() {
+            if (!activeChat) return;
+            document.getElementById('chatOptionsDropdown').classList.add('hidden');
+            const ok = await openCustomDialog({ title: 'Bersihkan Riwayat Obrolan?', message: `Seluruh pesan pada "${activeChat.name}" akan dihapus permanen.`, confirmText: 'Bersihkan Chat', isDanger: true });
+            if (!ok) return;
+            const res = await fetch('/api/chat/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatType: activeChat.type, targetId: activeChat.id, userId: session.user.id })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            await loadChatData();
+        }
+
+        function openManageMembersModal() {
+            document.getElementById('chatOptionsDropdown').classList.add('hidden');
+            if (!activeChat || activeChat.type !== 'group') return;
+            const grp = chatData.groups.find(g => String(g.id) === activeChat.id);
+            if (!grp) return;
+            const memberIds = JSON.parse(grp.members_json || '[]');
+            document.getElementById('manageGroupTitleSub').innerText = `Grup: ${grp.name} (${memberIds.length} Anggota)`;
+            document.getElementById('manageMembersList').innerHTML = memberIds.map(mid => {
+                const st = appData.students.find(s => s.id === mid);
+                const sName = st ? st.name : mid;
+                const isMe = mid === session.user.id;
+                return `
+                    <div class="p-2.5 rounded-xl border bg-slate-50 flex justify-between items-center text-xs">
+                        <div>
+                            <p class="font-bold text-slate-800">${sName} ${isMe ? '<span class="text-emerald-600">(Anda)</span>' : ''}</p>
+                            <p class="text-[10px] text-slate-500">${mid} • ${st ? st.kelas : ''}</p>
+                        </div>
+                        ${!isMe ? `<button onclick="removeMemberFromGroup('${mid}', '${sName.replace(/'/g, "\\'")}')" class="px-2.5 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-600 text-rose-700 hover:text-white font-bold text-[11px] transition">Keluarkan</button>` : ''}
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('manageMembersModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeManageMembersModal() { document.getElementById('manageMembersModal').classList.add('hidden'); }
+
+        async function removeMemberFromGroup(memberId, memberName) {
+            if (!activeChat || activeChat.type !== 'group') return;
+            const ok = await openCustomDialog({ title: 'Keluarkan Anggota Grup?', message: `Keluarkan ${memberName} dari grup "${activeChat.name}"?`, confirmText: 'Ya, Keluarkan', isDanger: true });
+            if (!ok) return;
+            const res = await fetch(`/api/chat/groups/${activeChat.id}/members/${memberId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requesterId: session.user.id })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            closeManageMembersModal();
+            await loadChatData();
+        }
+
+        async function leaveCurrentGroup() {
+            if (!activeChat || activeChat.type !== 'group') return;
+            const ok = await openCustomDialog({ title: 'Keluar dari Grup?', message: `Anda tidak akan menerima pesan lagi dari grup "${activeChat.name}".`, confirmText: 'Keluar Grup', isDanger: true });
+            if (!ok) return;
+            const res = await fetch(`/api/chat/groups/${activeChat.id}/members/${session.user.id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requesterId: session.user.id })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            closeManageMembersModal();
+            resetActiveChatRoom();
+            await loadChatData();
+        }
+
+        async function hideCurrentPersonalContact() {
+            document.getElementById('chatOptionsDropdown').classList.add('hidden');
+            if (!activeChat || activeChat.type !== 'personal') return;
+            const ok = await openCustomDialog({ title: 'Hapus Teman dari Daftar?', message: `${activeChat.name} akan dihapus dari daftar chat personal Anda.`, confirmText: 'Hapus Teman', isDanger: true });
+            if (!ok) return;
+            const res = await fetch('/api/chat/contacts/hide', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentId: session.user.id, targetId: activeChat.id })
+            });
+            const data = await res.json();
+            showToast(data.message);
+            resetActiveChatRoom();
+            await loadChatData();
+        }
+
+        function promptRestoreContact() {
+            document.getElementById('contactSearchInput').value = '';
+            renderAddContactSuggestions('');
+            document.getElementById('addContactModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('contactSearchInput').focus(), 100);
+            lucide.createIcons();
+        }
+
+        function closeAddContactModal() { document.getElementById('addContactModal').classList.add('hidden'); }
+
+        function filterAddContactList(e) {
+            const query = e.target.value.trim();
+            if (e.key === 'Enter' && query !== '') { submitAddContactByInput(); return; }
+            renderAddContactSuggestions(query);
+        }
+
+        function renderAddContactSuggestions(query) {
+            const meId = session.user.id;
+            const hiddenIds = chatData.hiddenIds || [];
+            const q = query.toLowerCase();
+            const others = appData.students.filter(s => s.id !== meId && (s.id.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || s.kelas.toLowerCase().includes(q)));
+            document.getElementById('contactMatchCount').innerText = `${others.length} Siswa`;
+            const container = document.getElementById('addContactSuggestions');
+
+            if (others.length === 0) {
+                container.innerHTML = `<div class="p-4 rounded-2xl bg-slate-50 border border-dashed text-center text-xs text-slate-400">Tidak ada siswa yang cocok dengan "<b>${query}</b>"</div>`;
+                return;
+            }
+            container.innerHTML = others.map(st => {
+                const isHidden = hiddenIds.includes(st.id);
+                const initials = st.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+                return `
+                    <div onclick="addOrOpenPersonalChat('${st.id}', '${st.name.replace(/'/g, "\\'")}', '${st.kelas}')" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 cursor-pointer transition flex items-center justify-between group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-extrabold flex items-center justify-center text-xs shrink-0 shadow-sm">${initials}</div>
+                            <div class="min-w-0">
+                                <p class="font-extrabold text-xs text-slate-800 truncate group-hover:text-emerald-700">${st.name} ${st.isTrusted ? '🏆' : ''}</p>
+                                <p class="text-[11px] text-slate-500">${st.id} • ${st.kelas}</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1.5 rounded-xl text-[11px] font-extrabold shrink-0 transition ${isHidden ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 group-hover:bg-emerald-600 group-hover:text-white'}">${isHidden ? '+ Pulihkan' : 'Chat →'}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function submitAddContactByInput() {
+            const rawVal = document.getElementById('contactSearchInput').value.trim().toUpperCase();
+            if (!rawVal) return showToast('Ketik ID Siswa atau pilih dari daftar di bawah!', true);
+            const found = appData.students.find(s => s.id === rawVal || s.name.toUpperCase() === rawVal);
+            if (!found || found.id === session.user.id) return showToast(`ID Siswa "${rawVal}" tidak ditemukan!`, true);
+            await addOrOpenPersonalChat(found.id, found.name, found.kelas);
+        }
+
+        async function addOrOpenPersonalChat(targetId, targetName, targetKelas) {
+            const res = await fetch('/api/chat/contacts/unhide', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentId: session.user.id, targetId: targetId })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            closeAddContactModal();
+            showToast(`💬 Ruang chat dengan ${targetName} siap!`);
+            await loadChatData();
+            selectChatRoom('personal', targetId, targetName, `${targetKelas} • ${targetId}`);
+        }
+
+        function renderChatMessages() {
+            if (!activeChat) return;
+            const meId = session.user.id;
+            const area = document.getElementById('chatMessagesArea');
+            const filtered = chatData.messages.filter(m => {
+                if (activeChat.type === 'group') return m.chat_type === 'group' && m.target_id === activeChat.id;
+                return m.chat_type === 'personal' && ((m.sender_id === meId && m.target_id === activeChat.id) || (m.sender_id === activeChat.id && m.target_id === meId));
+            });
+
+            if (filtered.length === 0) {
+                area.innerHTML = `<div class="text-center text-xs text-slate-500 bg-white/80 rounded-xl p-3">Belum ada pesan. Mulai sapa sekarang! 👋</div>`;
+                return;
+            }
+            area.innerHTML = filtered.map(m => {
+                if (m.sender_id === 'SYSTEM') {
+                    return `<div class="flex justify-center my-1"><span class="px-3 py-1 rounded-full bg-amber-100/90 border border-amber-200 text-[10px] font-bold text-amber-900 shadow-sm">${m.message}</span></div>`;
+                }
+                const isMe = m.sender_id === meId;
+                const senderName = m.sender_id === 'KASIR01' ? 'Kasir myKantin' : (appData.students.find(s => s.id === m.sender_id)?.name || m.sender_id);
+                const timeStr = (m.created_at || '').split(' ')[1]?.slice(0, 5) || '';
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <div class="max-w-[78%] px-3.5 py-2 rounded-2xl shadow-sm text-xs ${isMe ? 'bg-[#d9fdd3] text-slate-800 rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none'}">
+                            ${(!isMe && (activeChat.type === 'group' || m.sender_id === 'KASIR01')) ? `<p class="font-extrabold text-[10px] text-emerald-700 mb-0.5">${senderName}</p>` : ''}
+                            <p class="leading-relaxed break-words text-[13px]">${m.message}</p>
+                            <p class="text-[9px] text-slate-400 text-right mt-1">${timeStr}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            area.scrollTop = area.scrollHeight;
+        }
+
+        document.getElementById('chatSendForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!activeChat) return;
+            const input = document.getElementById('chatInputText');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            document.getElementById('emojiPickerPanel').classList.add('hidden');
+            await fetch('/api/chat/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatType: activeChat.type, targetId: activeChat.id, senderId: session.user.id, message: text })
+            });
+            await loadChatData();
+        });
+
+        function openCreateGroupModal() {
+            const friends = appData.students.filter(s => s.id !== session.user.id);
+            document.getElementById('groupMemberCheckboxes').innerHTML = friends.map(f => `
+                <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-white cursor-pointer text-xs">
+                    <input type="checkbox" value="${f.id}" class="grp-member-cb w-4 h-4 accent-emerald-600">
+                    <span class="font-bold text-slate-800">${f.name}</span>
+                    <span class="text-slate-400">(${f.id} • ${f.kelas})</span>
+                </label>
+            `).join('');
+            document.getElementById('createGroupModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeCreateGroupModal() { document.getElementById('createGroupModal').classList.add('hidden'); }
+
+        async function submitCreateGroup() {
+            const name = document.getElementById('newGroupName').value.trim();
+            const memberIds = Array.from(document.querySelectorAll('.grp-member-cb:checked')).map(cb => cb.value);
+            const res = await fetch('/api/chat/groups', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, creatorId: session.user.id, memberIds })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            document.getElementById('newGroupName').value = '';
+            closeCreateGroupModal();
+            await loadChatData();
+            selectChatRoom('group', String(data.groupId), name);
+        }
+
+        function openInviteGroupModal() {
+            if (!activeChat || activeChat.type !== 'group') return;
+            const grp = chatData.groups.find(g => String(g.id) === activeChat.id);
+            if (!grp) return;
+            const currentMembers = JSON.parse(grp.members_json || '[]');
+            const meId = session.user.id;
+            const chattedPartnerIds = new Set();
+            chatData.messages.forEach(m => {
+                if (m.chat_type === 'personal') {
+                    if (m.sender_id === meId) chattedPartnerIds.add(m.target_id);
+                    if (m.target_id === meId) chattedPartnerIds.add(m.sender_id);
+                }
+            });
+            const candidates = appData.students.filter(s => !currentMembers.includes(s.id)).sort((a, b) => (chattedPartnerIds.has(b.id) ? 1 : 0) - (chattedPartnerIds.has(a.id) ? 1 : 0));
+            document.getElementById('inviteGroupTitleSub').innerText = `Grup: ${grp.name}`;
+            document.getElementById('inviteByIdInput').value = '';
+            const listEl = document.getElementById('inviteAvailableList');
+            listEl.innerHTML = candidates.length === 0
+                ? `<p class="text-xs text-slate-400 italic p-2 text-center">Semua siswa sudah tergabung di grup ini.</p>`
+                : candidates.map(c => `
+                    <label class="flex items-center justify-between p-2 rounded-xl hover:bg-white cursor-pointer text-xs border border-transparent hover:border-slate-200">
+                        <div class="flex items-center gap-2.5">
+                            <input type="checkbox" value="${c.id}" class="invite-member-cb w-4 h-4 accent-emerald-600">
+                            <div>
+                                <p class="font-bold text-slate-800">${c.name} <span class="text-slate-400 font-normal">(${c.id})</span></p>
+                                <p class="text-[10px] text-slate-500">${c.kelas}</p>
+                            </div>
+                        </div>
+                        ${chattedPartnerIds.has(c.id) ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">Pernah Chat</span>' : ''}
+                    </label>
+                `).join('');
+            document.getElementById('inviteGroupModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeInviteGroupModal() { document.getElementById('inviteGroupModal').classList.add('hidden'); }
+
+        async function submitInviteMembers() {
+            if (!activeChat || activeChat.type !== 'group') return;
+            const typedIds = document.getElementById('inviteByIdInput').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+            const checkedIds = Array.from(document.querySelectorAll('.invite-member-cb:checked')).map(cb => cb.value);
+            const combinedIds = Array.from(new Set([...typedIds, ...checkedIds]));
+            if (combinedIds.length === 0) return showToast('Ketik ID Siswa atau pilih minimal 1 teman dari daftar!', true);
+
+            const res = await fetch(`/api/chat/groups/${activeChat.id}/members`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adderId: session.user.id, memberIds: combinedIds })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            closeInviteGroupModal();
+            await loadChatData();
+        }
+
+        // ==================== LOGIN & SESSION ====================
+        function switchLoginRole(role) {
+            currentLoginRole = role;
+            const tabSiswa = document.getElementById('tabSiswa');
+            const tabKasir = document.getElementById('tabKasir');
+            const hint = document.getElementById('demoHint');
+            if (role === 'siswa') {
+                tabSiswa.className = "py-2.5 text-sm font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition flex items-center justify-center gap-2";
+                tabKasir.className = "py-2.5 text-sm font-bold rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2";
+                document.getElementById('labelId').innerText = "NIS / ID Siswa";
+                document.getElementById('loginId').placeholder = "Contoh: SIS001";
+                document.getElementById('labelPin').innerText = "PIN Keamanan (4 Digit)";
+                hint.innerHTML = `<p class="font-bold text-slate-700">💡 Akun Demo Siswa:</p><p>• <b>SIS001</b> (Budi) | PIN: <b>1234</b></p><p>• <b>SIS002</b> (Siti) | PIN: <b>5678</b></p><p>• <b>SIS003</b> (Andi) | PIN: <b>1111</b></p>`;
+            } else {
+                tabKasir.className = "py-2.5 text-sm font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition flex items-center justify-center gap-2";
+                tabSiswa.className = "py-2.5 text-sm font-bold rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2";
+                document.getElementById('labelId').innerText = "Username Kasir / Admin";
+                document.getElementById('loginId').placeholder = "admin";
+                document.getElementById('labelPin').innerText = "Password";
+                hint.innerHTML = `<p class="font-bold text-slate-700">💡 Akun Demo Kasir & Laporan Sekolah:</p><p>• Username: <b>admin</b> | Password: <b>admin123</b></p>`;
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: currentLoginRole, id: document.getElementById('loginId').value.trim(), pin: document.getElementById('loginPin').value.trim() })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            session = data;
+            document.getElementById('loginForm').reset();
+            initDashboard();
+        });
+
+        function logout() {
+            fetch("/api/logout", { method: "POST", headers: kasirHeaders() }).catch(() => {});
+            if (isChatMobileExpanded) toggleChatMobileView(false);
+            session = null;
+            cart = [];
+            preorderCart = [];
+            activeAccordion = null;
+            activeChat = null;
+            activeKasirChatStudentId = null;
+            lastKnownMaxMsgId = null;
+            kasirCatFilter = { main: 'ALL', sub: 'ALL' };
+            siswaCatFilter = { main: 'ALL', sub: 'ALL' };
+            if (chatPollInterval) clearInterval(chatPollInterval);
+            document.getElementById('mainNav').classList.add('hidden');
+            document.getElementById('kasirDashboard').classList.add('hidden');
+            document.getElementById('siswaDashboard').classList.add('hidden');
+            document.getElementById('loginView').classList.remove('hidden');
+        }
+
+        async function initDashboard() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('mainNav').classList.remove('hidden');
+            const badge = document.getElementById('roleBadge');
+            document.getElementById('navUserName').innerText = session.user.name;
+
+            if (session.role === 'kasir') {
+                badge.innerText = 'Kasir & Admin Sekolah';
+                badge.className = 'ml-2 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800';
+                document.getElementById('navUserSub').innerText = 'Terminal Kasir & Laporan';
+                document.getElementById('kasirDashboard').classList.remove('hidden');
+                document.getElementById('siswaDashboard').classList.add('hidden');
+                await refreshData();
+                await loadChatData(false);
+                if (chatPollInterval) clearInterval(chatPollInterval);
+                chatPollInterval = setInterval(() => loadChatData(true), 3000);
+                return;
+            } else {
+                badge.innerText = 'Akun Siswa';
+                badge.className = 'ml-2 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase bg-emerald-100 text-emerald-800';
+                document.getElementById('navUserSub').innerText = `${session.user.id} • ${session.user.kelas}`;
+                document.getElementById('siswaDashboard').classList.remove('hidden');
+                document.getElementById('kasirDashboard').classList.add('hidden');
+                const qrContainer = document.getElementById('studentQrBox');
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, { text: session.user.id, width: 82, height: 82, colorDark: "#0f172a", colorLight: "#ffffff" });
+                resetActiveChatRoom();
+                await refreshData();
+                await loadChatData(false);
+                if (chatPollInterval) clearInterval(chatPollInterval);
+                chatPollInterval = setInterval(() => loadChatData(true), 3000);
+            }
+        }
+
+        async function refreshData() {
+            const res = await fetch('/api/data', { headers: kasirHeaders() });
+            appData = await res.json();
+            if (session.role === 'kasir') {
+                renderKasirSmartCategoryBar();
+                renderKasirProducts();
+                populateStudentDropdowns();
+                renderKasirPreorders();
+                renderAdminReport();
+                renderKasirChatSidebar();
+            } else {
+                renderSiswaDashboard();
+            }
+            lucide.createIcons();
+        }
+
+        // ==================== LOGIKA KASIR ====================
+        function switchKasirTab(tab) {
+            ['pos', 'preorder', 'chat', 'stok', 'topup', 'laporan'].forEach(t => {
+                document.getElementById(`kasirTab${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.toggle('hidden', t !== tab);
+                const btn = document.getElementById(`btnKasir${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                btn.className = t === tab 
+                    ? "px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 text-white shadow flex items-center gap-2 relative"
+                    : "px-4 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-600 border hover:bg-slate-50 flex items-center gap-2 relative";
+            });
+            if (tab === 'pos') document.getElementById('searchProduct').focus();
+            if (tab === 'chat') loadChatData(false);
+            if (tab === 'laporan') renderAdminReport();
+        }
+
+        function handleBarcodeInput(e) {
+            const val = e.target.value.trim();
+            if (e.key === 'Enter' && val !== '') {
+                const exactProd = appData.products.find(p => p.barcode === val);
+                if (exactProd) {
+                    addToCart(exactProd.barcode);
+                    e.target.value = '';
+                    showToast(`+1 ${exactProd.name} masuk keranjang`);
+                } else showToast(`Barcode "${val}" tidak ditemukan!`, true);
+            }
+            renderKasirProducts();
+        }
+
+        function handleStudentQrInput(e) {
+            if (e.key !== 'Enter') return;
+            const code = e.target.value.trim().toUpperCase();
+            applyScannedStudentCode(code, document.getElementById('quickScanTarget').value);
+            e.target.value = '';
+        }
+
+        function applyScannedStudentCode(code, targetRole) {
+            const student = appData.students.find(s => s.id === code);
+            if (!student) return showToast(`ID Siswa "${code}" tidak terdaftar!`, true);
+            if (targetRole === 'buyer') {
+                document.getElementById('posBuyer').value = student.id;
+                document.getElementById('posPayer').value = student.id;
+                showToast(`Pembeli diset: ${student.name} (${student.id})`);
+            } else {
+                document.getElementById('posPayer').value = student.id;
+                showToast(`Sumber dana diset: ${student.name} (${student.id})`);
+            }
+            checkLoanStatus();
+        }
+
+        function startCameraScanner() {
+            document.getElementById('cameraModal').classList.remove('hidden');
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 240, height: 240 } },
+                (decodedText) => {
+                    const clean = decodedText.trim().toUpperCase();
+                    if (clean.startsWith('SIS')) {
+                        applyScannedStudentCode(clean, document.getElementById('camTargetRole').value);
+                        stopCameraScanner();
+                    } else {
+                        const prod = appData.products.find(p => p.barcode === clean);
+                        if (prod) { addToCart(prod.barcode); showToast(`Scan Berhasil: +1 ${prod.name}`); stopCameraScanner(); }
+                    }
+                }
+            ).catch(() => {
+                showToast('Kamera tidak tersedia. Gunakan input scanner USB/manual.', true);
+                stopCameraScanner();
+            });
+        }
+
+        function stopCameraScanner() {
+            document.getElementById('cameraModal').classList.add('hidden');
+            if (html5QrcodeScanner) { html5QrcodeScanner.stop().catch(() => {}); html5QrcodeScanner = null; }
+        }
+
+        function renderKasirProducts() {
+            const query = document.getElementById('searchProduct').value.toLowerCase();
+            const catFiltered = filterProductsBySmartCategory(appData.products, kasirCatFilter);
+            const filtered = catFiltered.filter(p => p.name.toLowerCase().includes(query) || p.barcode.includes(query));
+            const gridEl = document.getElementById('kasirProductGrid');
+
+            if (filtered.length === 0) {
+                gridEl.innerHTML = `<div class="col-span-2 p-8 text-center text-xs text-slate-400 border border-dashed rounded-xl">Tidak ada barang yang sesuai dengan filter atau pencarian.</div>`;
+                return;
+            }
+
+            gridEl.innerHTML = filtered.map(p => {
+                const catInfo = getSmartCategoryInfo(p);
+                return `
+                    <div onclick="addToCart('${p.barcode}')" class="p-3.5 rounded-xl border hover:border-emerald-500 hover:bg-emerald-50/40 cursor-pointer transition flex justify-between items-center group">
+                        <div class="min-w-0 pr-2">
+                            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-md ${catInfo.badgeClass}">${catInfo.label}</span>
+                            <p class="font-bold text-sm text-slate-800 mt-1.5 group-hover:text-emerald-700 truncate">${p.name}</p>
+                            <p class="text-xs text-slate-400">Kode: ${p.barcode} • Stok: <b class="${p.stock < 10 ? 'text-red-500' : 'text-slate-600'}">${p.stock}</b></p>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p class="font-extrabold text-emerald-600 text-sm">Rp ${p.price.toLocaleString()}</p>
+                            <span class="text-[11px] text-emerald-600 font-semibold">+ Tambah</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function populateStudentDropdowns() {
+            const opts = appData.students.map(s => `<option value="${s.id}">${s.name} (${s.id}) — Rp ${s.balance.toLocaleString()}</option>`).join('');
+            document.getElementById('posBuyer').innerHTML = opts;
+            document.getElementById('posPayer').innerHTML = opts;
+            document.getElementById('topupStudent').innerHTML = opts;
+            checkLoanStatus();
+        }
+
+        function checkLoanStatus() {
+            const isLoan = document.getElementById('posBuyer').value !== document.getElementById('posPayer').value;
+            document.getElementById('loanBanner').classList.toggle('hidden', !isLoan);
+        }
+
+        function addToCart(barcode) {
+            const prod = appData.products.find(p => p.barcode === barcode);
+            if (!prod || prod.stock <= 0) return showToast('Stok barang habis!', true);
+            const item = cart.find(c => c.barcode === barcode);
+            if (item) {
+                if (item.qty >= prod.stock) return showToast('Melebihi stok tersedia!', true);
+                item.qty++;
+            } else cart.push({ ...prod, qty: 1 });
+            renderCart();
+        }
+
+        function updateQty(barcode, delta) {
+            const idx = cart.findIndex(c => c.barcode === barcode);
+            if (idx === -1) return;
+            cart[idx].qty += delta;
+            if (cart[idx].qty <= 0) cart.splice(idx, 1);
+            renderCart();
+        }
+
+        function renderCart() {
+            const box = document.getElementById('cartItems');
+            if (cart.length === 0) {
+                box.innerHTML = '<p class="text-slate-400 text-center py-6">Scan barcode atau klik barang di samping</p>';
+                document.getElementById('cartTotal').innerText = 'Rp 0';
+                return;
+            }
+            let total = 0;
+            box.innerHTML = cart.map(c => {
+                total += c.price * c.qty;
+                return `
+                    <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border">
+                        <div>
+                            <p class="font-bold text-slate-800">${c.name}</p>
+                            <p class="text-xs text-slate-500">Rp ${c.price.toLocaleString()} x ${c.qty}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="updateQty('${c.barcode}', -1)" class="w-6 h-6 rounded-lg bg-white border font-bold text-slate-600">-</button>
+                            <span class="font-bold text-xs w-4 text-center">${c.qty}</span>
+                            <button onclick="updateQty('${c.barcode}', 1)" class="w-6 h-6 rounded-lg bg-white border font-bold text-slate-600">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('cartTotal').innerText = `Rp ${total.toLocaleString()}`;
+        }
+
+        async function processCheckout() {
+            if (cart.length === 0) return showToast('Keranjang belanja masih kosong!', true);
+            const totalAmount = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: kasirHeaders(),
+                body: JSON.stringify({
+                    buyerId: document.getElementById('posBuyer').value,
+                    payerId: document.getElementById('posPayer').value,
+                    pin: document.getElementById('posPin').value,
+                    items: cart,
+                    totalAmount
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            cart = [];
+            document.getElementById('posPin').value = '';
+            renderCart();
+            await refreshData();
+            if (data.transactionId) openReceiptModal(data.transactionId);
+        }
+
+        function renderKasirPreorders() {
+            const activePO = (appData.preorders || []).filter(p => p.status !== 'SELESAI');
+            const badge = document.getElementById('preorderBadgeCount');
+            if (activePO.length > 0) { badge.innerText = activePO.length; badge.classList.remove('hidden'); }
+            else badge.classList.add('hidden');
+
+            const list = document.getElementById('kasirPreorderList');
+            if (!appData.preorders || appData.preorders.length === 0) {
+                list.innerHTML = '<p class="text-xs text-slate-400">Belum ada pesanan pre-order dari kelas.</p>';
+                return;
+            }
+            list.innerHTML = appData.preorders.map(po => {
+                const st = appData.students.find(s => s.id === po.student_id);
+                let actionBtn = '';
+                if (po.status === 'DIPROSES') actionBtn = `<button onclick="updatePreorderStatus(${po.id}, 'SIAP_DIAMBIL')" class="w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold">Tandai Siap Diambil</button>`;
+                else if (po.status === 'SIAP_DIAMBIL') actionBtn = `<button onclick="updatePreorderStatus(${po.id}, 'SELESAI')" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">Serahkan ke Siswa (Selesai)</button>`;
+                return `
+                    <div class="p-4 rounded-2xl border ${po.status === 'SELESAI' ? 'bg-slate-50 opacity-60' : 'bg-white border-amber-200 shadow-sm'} space-y-2.5">
+                        <div class="flex justify-between items-center">
+                            <span class="font-extrabold text-sm text-slate-900">#PO-${po.id} • ${st ? st.name : po.student_id}</span>
+                            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${po.status === 'DIPROSES' ? 'bg-amber-100 text-amber-800' : (po.status === 'SIAP_DIAMBIL' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-700')}">${po.status.replace('_', ' ')}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 font-medium">${po.items_summary}</p>
+                        <div class="flex justify-between text-xs text-slate-500 border-t pt-2">
+                            <span>Ambil: <b>${po.pickup_slot}</b></span>
+                            <b class="text-emerald-600">Rp ${po.total_amount.toLocaleString()} (LUNAS)</b>
+                        </div>
+                        ${actionBtn}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function updatePreorderStatus(preorderId, status) {
+            const res = await fetch('/api/preorders/status', {
+                method: 'POST',
+                headers: kasirHeaders(),
+                body: JSON.stringify({ preorderId, status })
+            });
+            const data = await res.json();
+            showToast(data.message);
+            refreshData();
+        }
+
+        function renderAdminReport() {
+            const txs = appData.transactions || [];
+            const totalRev = txs.reduce((s, t) => s + t.total_amount, 0);
+            document.getElementById('statTotalRevenue').innerText = `Rp ${totalRev.toLocaleString()}`;
+            document.getElementById('statTotalTx').innerText = `${txs.length} Transaksi`;
+
+            const salesMap = {};
+            (appData.allItems || []).forEach(i => { salesMap[i.product_name] = (salesMap[i.product_name] || 0) + i.qty; });
+            const sortedProds = Object.entries(salesMap).sort((a, b) => b[1] - a[1]);
+            document.getElementById('statTopProduct').innerText = sortedProds.length > 0 ? `${sortedProds[0][0]} (${sortedProds[0][1]}x)` : 'Belum ada data';
+
+            const lowStocks = appData.products.filter(p => p.stock < 10);
+            document.getElementById('statLowStockCount').innerText = `${lowStocks.length} Item`;
+            document.getElementById('lowStockList').innerHTML = lowStocks.length === 0
+                ? '<p class="text-xs text-emerald-600 font-semibold">✅ Semua stok barang kantin dalam kondisi aman.</p>'
+                : lowStocks.map(p => `
+                    <div class="p-3 rounded-xl bg-red-50 border border-red-200 flex justify-between items-center text-xs">
+                        <div><p class="font-bold text-red-900">${p.name}</p><p class="text-red-600">Kode: ${p.barcode}</p></div>
+                        <span class="px-2.5 py-1 rounded-lg bg-red-600 text-white font-extrabold">Sisa ${p.stock}</span>
+                    </div>
+                `).join('');
+
+            const dailyMap = {};
+            txs.slice().reverse().forEach(t => {
+                const day = t.created_at.split(' ')[0];
+                dailyMap[day] = (dailyMap[day] || 0) + t.total_amount;
+            });
+            const labels = Object.keys(dailyMap).length > 0 ? Object.keys(dailyMap) : ['Hari Ini'];
+            const values = Object.values(dailyMap).length > 0 ? Object.values(dailyMap) : [0];
+
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            if (revenueChartInstance) revenueChartInstance.destroy();
+            revenueChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Omzet Harian (Rp)', data: values, backgroundColor: '#10b981', borderRadius: 8 }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+
+            const txList = document.getElementById('kasirTxList');
+            txList.innerHTML = txs.length === 0
+                ? '<p class="text-xs text-slate-400">Belum ada transaksi tercatat.</p>'
+                : txs.slice(0, 9).map(tx => {
+                    const buyer = appData.students.find(s => s.id === tx.buyer_id);
+                    return `
+                        <div onclick="openReceiptModal(${tx.id})" class="p-4 rounded-xl border hover:border-emerald-500 cursor-pointer bg-slate-50/70 transition space-y-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-extrabold text-xs text-slate-700">Struk #${tx.id}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${tx.is_loan ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'}">${tx.is_loan ? 'PINJAM TEMAN' : 'LUNAS'}</span>
+                            </div>
+                            <p class="text-xs text-slate-600">Pembeli: <b>${buyer ? buyer.name : tx.buyer_id}</b></p>
+                            <p class="font-extrabold text-sm text-emerald-600">Rp ${tx.total_amount.toLocaleString()}</p>
+                        </div>
+                    `;
+                }).join('');
+        
+            const logs = appData.auditLogs || [];
+            const auditEl = document.getElementById('auditLogList');
+            if (auditEl) {
+                auditEl.innerHTML = logs.length === 0
+                    ? '<p class="text-slate-400">Belum ada catatan penambahan saldo.</p>'
+                    : logs.map(l => `
+                        <div class="p-3 rounded-xl bg-slate-50 border flex flex-wrap justify-between items-center gap-2">
+                            <div>
+                                <span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-extrabold text-[10px]">${l.action_type}</span>
+                                <span class="font-bold text-slate-800 ml-1.5">Siswa ${l.target_student_id}</span>
+                                <p class="text-[11px] text-slate-500 mt-0.5">${l.details} • Oleh: <b>${l.actor}</b></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-extrabold text-emerald-600">+Rp ${l.amount.toLocaleString()}</p>
+                                <p class="text-[10px] text-slate-400">${l.created_at}</p>
+                            </div>
+                        </div>
+                    `).join('');
+            }
+        }
+
+        function openReceiptModal(txId) {
+            const tx = appData.transactions.find(t => t.id === txId);
+            if (!tx) return;
+            const buyer = appData.students.find(s => s.id === tx.buyer_id);
+            const payer = appData.students.find(s => s.id === tx.payer_id);
+
+            document.getElementById('recTxId').innerText = `No. Struk #${tx.id}`;
+            document.getElementById('recDate').innerText = tx.created_at;
+            document.getElementById('recBuyer').innerText = buyer ? `${buyer.name} (${buyer.id})` : tx.buyer_id;
+            document.getElementById('recPayer').innerText = payer ? `${payer.name} (${payer.id})` : tx.payer_id;
+
+            const mEl = document.getElementById('recMethod');
+            mEl.innerText = tx.is_loan ? 'Dibayari Teman (Pinjaman)' : 'Saldo Pribadi';
+            mEl.className = tx.is_loan ? 'font-bold text-amber-600' : 'font-bold text-emerald-600';
+
+            document.getElementById('recItemsList').innerHTML = tx.items.map(i => `
+                <div class="flex justify-between text-slate-700">
+                    <span>${i.product_name} <span class="text-slate-400">(${i.qty}x @${i.price.toLocaleString()})</span></span>
+                    <span class="font-bold">Rp ${(i.price * i.qty).toLocaleString()}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('recTotal').innerText = `Rp ${tx.total_amount.toLocaleString()}`;
+            document.getElementById('receiptModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+        function closeReceiptModal() { document.getElementById('receiptModal').classList.add('hidden'); }
+
+        document.getElementById('formAddProduct').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: kasirHeaders(),
+                body: JSON.stringify({
+                    barcode: document.getElementById('inBarcode').value,
+                    name: document.getElementById('inName').value,
+                    category: document.getElementById('inCategory').value,
+                    price: parseInt(document.getElementById('inPrice').value),
+                    stock: parseInt(document.getElementById('inStock').value)
+                })
+            });
+            const data = await res.json();
+            showToast(data.message);
+            e.target.reset();
+            refreshData();
+        });
+
+        document.getElementById('formTopup').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/topup', {
+                method: 'POST',
+                headers: kasirHeaders(),
+                body: JSON.stringify({ studentId: document.getElementById('topupStudent').value, amount: parseInt(document.getElementById('topupAmount').value) })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            e.target.reset();
+            refreshData();
+        });
+
+        // ==================== LOGIKA DASHBOARD SISWA ====================
+        function switchLoanActionTab(tab) {
+            const isLend = tab === 'lend';
+            document.getElementById('formLendMoney').classList.toggle('hidden', !isLend);
+            document.getElementById('formRequestLoan').classList.toggle('hidden', isLend);
+            document.getElementById('btnTabLend').className = isLend ? "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 text-white shadow flex items-center gap-2 transition" : "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-2 transition";
+            document.getElementById('btnTabRequest').className = !isLend ? "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 text-white shadow flex items-center gap-2 transition" : "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-2 transition";
+        }
+
+        function renderSiswaDashboard() {
+            const me = appData.students.find(s => s.id === session.user.id);
+            document.getElementById('siswaBalance').innerText = `Rp ${me.balance.toLocaleString()}`;
+            document.getElementById('siswaInfo').innerText = `${me.name} • Kelas ${me.kelas}`;
+            document.getElementById('siswaQrIdText').innerText = me.id;
+
+            const badge = document.getElementById('siswaTrustBadge');
+            if (me.hasOverdue) { badge.innerText = '⚠️ Terkunci (Telat Bayar > 3 Hari)'; badge.className = 'text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-red-500 text-white'; }
+            else if (me.isTrusted) { badge.innerText = '🏆 Teman Terpercaya'; badge.className = 'text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-900'; }
+            else { badge.innerText = '⭐ Anggota Reguler'; badge.className = 'text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-white/20 text-white'; }
+
+            document.getElementById('siswaCreditScore').innerText = me.effectiveScore;
+            document.getElementById('siswaActiveDebt').innerText = `Rp ${me.activeDebt.toLocaleString()}`;
+            document.getElementById('siswaMaxLimit').innerText = `Rp ${me.maxLimit.toLocaleString()}`;
+
+            // Render Bar Kategori Cerdas & Menu Pre-Order Siswa
+            renderSiswaSmartCategoryBar();
+            renderSiswaPreorderMenu();
+
+            const myPO = (appData.preorders || []).filter(p => p.student_id === me.id);
+            const poWrapper = document.getElementById('siswaPreorderStatusWrapper');
+            if (myPO.length > 0) {
+                poWrapper.classList.remove('hidden');
+                document.getElementById('siswaActivePreorders').innerHTML = myPO.slice(0, 4).map(po => `
+                    <div class="p-3 rounded-xl border bg-slate-50 flex justify-between items-center text-xs">
+                        <div>
+                            <p class="font-extrabold text-slate-800">#PO-${po.id} • ${po.pickup_slot}</p>
+                            <p class="text-slate-500 truncate max-w-[200px]">${po.items_summary}</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-lg font-extrabold text-[10px] ${po.status === 'SIAP_DIAMBIL' ? 'bg-emerald-600 text-white animate-pulse' : (po.status === 'DIPROSES' ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-600')}">${po.status.replace('_', ' ')}</span>
+                    </div>
+                `).join('');
+            } else poWrapper.classList.add('hidden');
+
+            const friends = appData.students.filter(s => s.id !== me.id);
+            const friendOpts = friends.map(f => `<option value="${f.id}">${f.name} (${f.id}) ${f.isTrusted ? '🏆' : ''}</option>`).join('');
+            document.getElementById('lendTargetSelect').innerHTML = friendOpts;
+            document.getElementById('reqLenderSelect').innerHTML = friendOpts;
+            updateLendPreview();
+
+            const incomingReqs = appData.loans.filter(l => l.lender_id === me.id && l.status === 'MENUNGGU');
+            const reqBox = document.getElementById('incomingRequestsBox');
+            if (incomingReqs.length > 0) {
+                reqBox.classList.remove('hidden');
+                document.getElementById('incomingRequestsList').innerHTML = incomingReqs.map(r => {
+                    const requester = appData.students.find(s => s.id === r.borrower_id);
+                    return `
+                        <div class="bg-white p-3.5 rounded-xl border border-amber-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                            <div>
+                                <p class="text-xs text-slate-500">Permintaan dari: <b class="text-slate-900">${requester ? requester.name : r.borrower_id}</b> (Skor: ${requester ? requester.effectiveScore : 100})</p>
+                                <p class="font-extrabold text-base text-amber-700">Rp ${r.amount.toLocaleString()}</p>
+                                <p class="text-[11px] text-slate-500 italic">"${r.note}"</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="respondLoan(${r.id}, 'APPROVE')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow">Setujui & PIN</button>
+                                <button onclick="respondLoan(${r.id}, 'REJECT')" class="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold">Tolak</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else reqBox.classList.add('hidden');
+
+            const myDebts = appData.loans.filter(l => l.borrower_id === me.id && l.status !== 'DITOLAK');
+            document.getElementById('myDebtsList').innerHTML = myDebts.length === 0 
+                ? '<p class="text-xs text-slate-400">Tidak ada riwayat pinjaman.</p>'
+                : myDebts.map(l => {
+                    const lender = appData.students.find(s => s.id === l.lender_id);
+                    let badgeHtml = '';
+                    if (l.status === 'LUNAS') badgeHtml = '<span class="text-xs font-bold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-lg">LUNAS</span>';
+                    else if (l.status === 'MENUNGGU') badgeHtml = '<span class="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-lg">MENUNGGU ACC</span>';
+                    else badgeHtml = `<button onclick="payMyDebt(${l.id})" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow">Bayar Hutang</button>`;
+                    return `
+                        <div class="p-3.5 rounded-xl border ${l.status === 'LUNAS' ? 'bg-slate-50 opacity-70' : 'bg-rose-50/50 border-rose-200'} flex justify-between items-center">
+                            <div>
+                                <p class="text-xs text-slate-500">Pinjam dari: <b class="text-slate-800">${lender ? lender.name : l.lender_id}</b></p>
+                                <p class="font-extrabold text-sm text-slate-900 mt-0.5">Rp ${l.amount.toLocaleString()}</p>
+                                <p class="text-[11px] text-slate-400">${l.note || ''}</p>
+                            </div>
+                            ${badgeHtml}
+                        </div>
+                    `;
+                }).join('');
+
+            const myCredits = appData.loans.filter(l => l.lender_id === me.id && l.status !== 'MENUNGGU' && l.status !== 'DITOLAK');
+            document.getElementById('myCreditsList').innerHTML = myCredits.length === 0
+                ? '<p class="text-xs text-slate-400">Belum ada teman yang meminjam saldo Anda.</p>'
+                : myCredits.map(l => {
+                    const borrower = appData.students.find(s => s.id === l.borrower_id);
+                    return `
+                        <div class="p-3.5 rounded-xl border bg-slate-50 flex justify-between items-center">
+                            <div>
+                                <p class="text-xs text-slate-500">Dipinjam oleh: <b class="text-slate-800">${borrower ? borrower.name : l.borrower_id}</b></p>
+                                <p class="font-extrabold text-sm text-slate-900 mt-0.5">Rp ${l.amount.toLocaleString()}</p>
+                            </div>
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-lg ${l.status === 'LUNAS' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}">${l.status === 'LUNAS' ? 'SUDAH DIKEMBALIKAN' : 'BELUM LUNAS'}</span>
+                        </div>
+                    `;
+                }).join('');
+
+            const myTx = (appData.transactions || []).filter(t => t.buyer_id === me.id || t.payer_id === me.id);
+            document.getElementById('siswaTxHistoryList').innerHTML = myTx.length === 0
+                ? '<p class="text-xs text-slate-400">Belum ada riwayat belanja di kantin.</p>'
+                : myTx.map(t => {
+                    const itemSummary = t.items.map(i => `${i.product_name} (${i.qty}x)`).join(', ');
+                    const roleText = t.buyer_id === me.id ? (t.is_loan ? 'Belanja (Dibayari Teman)' : 'Belanja Mandiri') : 'Membayari Belanja Teman';
+                    return `
+                        <div class="p-3.5 rounded-xl border hover:border-emerald-500 bg-slate-50/70 transition flex flex-col justify-between gap-2.5">
+                            <div onclick="openReceiptModal(${t.id})" class="cursor-pointer flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[11px] font-extrabold text-slate-700">Struk #${t.id}</span>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${t.is_loan ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700'}">${roleText}</span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mt-1 line-clamp-1">${itemSummary}</p>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">${t.created_at}</p>
+                                </div>
+                                <div class="text-right pl-2"><p class="font-extrabold text-sm text-emerald-600">Rp ${t.total_amount.toLocaleString()}</p></div>
+                            </div>
+                            <div class="pt-2 border-t border-slate-200/70 flex justify-between items-center">
+                                <button onclick="openReceiptModal(${t.id})" class="text-[11px] text-slate-500 hover:text-slate-800 font-bold underline">Lihat Struk</button>
+                                <button onclick="reorderTransaction(${t.id})" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-sm transition"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Order Lagi</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function addToPreorder(barcode) {
+            const prod = appData.products.find(p => p.barcode === barcode);
+            if (!prod || prod.stock <= 0) return showToast('Stok menu habis!', true);
+            const exist = preorderCart.find(c => c.barcode === barcode);
+            if (exist) {
+                if (exist.qty >= prod.stock) return showToast('Melebihi stok!', true);
+                exist.qty++;
+            } else preorderCart.push({ ...prod, qty: 1 });
+            renderPreorderCart();
+        }
+
+        function renderPreorderCart() {
+            const box = document.getElementById('preorderCartList');
+            if (preorderCart.length === 0) {
+                box.innerHTML = '<p class="text-slate-400 italic">Klik menu di samping untuk memesan...</p>';
+                document.getElementById('preorderTotal').innerText = 'Rp 0';
+                return;
+            }
+            let total = 0;
+            box.innerHTML = preorderCart.map((c, idx) => {
+                total += c.price * c.qty;
+                return `
+                    <div class="flex justify-between items-center">
+                        <span>${c.name} x${c.qty}</span>
+                        <div class="flex items-center gap-2">
+                            <b>Rp ${(c.price * c.qty).toLocaleString()}</b>
+                            <button onclick="preorderCart.splice(${idx}, 1); renderPreorderCart();" class="text-red-500 font-bold">×</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('preorderTotal').innerText = `Rp ${total.toLocaleString()}`;
+        }
+
+        async function submitPreorder() {
+            if (preorderCart.length === 0) return showToast('Pilih menu pre-order dulu!', true);
+            const res = await fetch('/api/preorders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    studentId: session.user.id,
+                    pickupSlot: document.getElementById('preorderSlot').value,
+                    items: preorderCart,
+                    pin: document.getElementById('preorderPin').value
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            preorderCart = [];
+            document.getElementById('preorderPin').value = '';
+            renderPreorderCart();
+            toggleAccordion('preorder');
+            refreshData();
+        }
+
+        function setQuickLend(val) {
+            const input = document.getElementById('lendAmountInput');
+            input.value = (parseInt(input.value) || 0) + val;
+            updateLendPreview();
+        }
+
+        function updateLendPreview() {
+            if (!session || session.role !== 'siswa') return;
+            const me = appData.students.find(s => s.id === session.user.id);
+            const targetId = document.getElementById('lendTargetSelect').value;
+            const target = appData.students.find(s => s.id === targetId);
+            const amount = parseInt(document.getElementById('lendAmountInput').value) || 0;
+
+            document.getElementById('previewTargetName').innerText = target ? `${target.name} (${target.id})` : '-';
+            document.getElementById('previewCurrentBal').innerText = `Rp ${me.balance.toLocaleString()}`;
+            document.getElementById('previewTransferAmount').innerText = `Rp ${amount.toLocaleString()}`;
+
+            const remaining = me.balance - amount;
+            const afterEl = document.getElementById('previewAfterBal');
+            const warnEl = document.getElementById('previewWarning');
+            const btnEl = document.getElementById('btnSubmitLend');
+
+            if (remaining < 0) {
+                afterEl.innerText = `-Rp ${Math.abs(remaining).toLocaleString()}`;
+                afterEl.className = 'font-bold text-red-600';
+                warnEl.classList.remove('hidden');
+                btnEl.disabled = true;
+                btnEl.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                afterEl.innerText = `Rp ${remaining.toLocaleString()}`;
+                afterEl.className = 'font-bold text-rose-700';
+                warnEl.classList.add('hidden');
+                btnEl.disabled = false;
+                btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        document.getElementById('formLendMoney').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/loans/lend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lenderId: session.user.id,
+                    borrowerId: document.getElementById('lendTargetSelect').value,
+                    amount: parseInt(document.getElementById('lendAmountInput').value),
+                    pin: document.getElementById('lendPinInput').value
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            e.target.reset();
+            toggleAccordion('loan');
+            refreshData();
+        });
+
+        document.getElementById('formRequestLoan').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/loans/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    borrowerId: session.user.id,
+                    lenderId: document.getElementById('reqLenderSelect').value,
+                    amount: parseInt(document.getElementById('reqAmountInput').value),
+                    note: document.getElementById('reqNoteInput').value
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            e.target.reset();
+            toggleAccordion('loan');
+            refreshData();
+        });
+
+        async function respondLoan(loanId, action) {
+            let pin = '';
+            if (action === 'APPROVE') {
+                pin = await openCustomDialog({ title: 'Setujui Permintaan Pinjaman', message: 'Masukkan 4 digit PIN Anda untuk mengonfirmasi transfer pinjaman ke teman:', requirePin: true, confirmText: 'Setujui & Transfer' });
+                if (!pin) return;
+            } else {
+                const ok = await openCustomDialog({ title: 'Tolak Permintaan Pinjaman?', message: 'Permintaan pinjaman dari teman ini akan ditolak.', confirmText: 'Tolak Permintaan', isDanger: true });
+                if (!ok) return;
+            }
+            const res = await fetch('/api/loans/respond', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ loanId, action, pin })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            refreshData();
+        }
+
+        async function payMyDebt(loanId) {
+            const pin = await openCustomDialog({ title: 'Konfirmasi Pelunasan Hutang', message: 'Masukkan 4 digit PIN dompet Anda untuk melunasi pinjaman ini:', requirePin: true, confirmText: 'Bayar Sekarang' });
+            if (!pin) return;
+            const res = await fetch('/api/loans/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ loanId, pin })
+            });
+            const data = await res.json();
+            if (!res.ok) return showToast(data.error, true);
+            showToast(data.message);
+            refreshData();
+        }
+    </script>
+</body>
+</html>
