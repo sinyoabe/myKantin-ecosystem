@@ -754,6 +754,283 @@ app.post('/api/qris/webhook', (req, res) => {
   res.json({ message: 'Webhook processed & audited successfully' });
 });
 
+
+// ============================================================================
+// EKOSISTEM MULTI-KANTIN (GOFOOD STYLE) & JASTIP SOSIAL (SOCIAL RUNNER)
+// ============================================================================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS canteens (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    owner_name TEXT NOT NULL,
+    location TEXT NOT NULL,
+    category TEXT DEFAULT 'Makanan & Minuman',
+    description TEXT,
+    banner_color TEXT DEFAULT 'from-emerald-600 to-teal-700',
+    rating REAL DEFAULT 4.9,
+    is_open INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS canteen_menus (
+    id TEXT PRIMARY KEY,
+    canteen_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    category TEXT DEFAULT 'Makanan',
+    stock INTEGER DEFAULT 50,
+    description TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS jastip_runners (
+    student_id TEXT PRIMARY KEY,
+    is_active INTEGER DEFAULT 0,
+    canteen_id TEXT,
+    note TEXT,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS jastip_orders (
+    id TEXT PRIMARY KEY,
+    orderer_id TEXT NOT NULL,
+    runner_id TEXT,
+    canteen_id TEXT NOT NULL,
+    items_json TEXT NOT NULL,
+    food_total INTEGER NOT NULL,
+    tip_amount INTEGER NOT NULL,
+    grand_total INTEGER NOT NULL,
+    delivery_note TEXT,
+    status TEXT DEFAULT 'MENUNGGU_RUNNER',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS jastip_wallets (
+    student_id TEXT PRIMARY KEY,
+    earned_balance INTEGER DEFAULT 0,
+    total_withdrawn INTEGER DEFAULT 0,
+    completed_jobs INTEGER DEFAULT 0
+  );
+`);
+
+// Seed data awal stan kantin & menu jika masih kosong
+const canteenCount = db.prepare('SELECT COUNT(*) as c FROM canteens').get().c;
+if (canteenCount === 0) {
+  const insCanteen = db.prepare('INSERT INTO canteens (id, name, owner_name, location, category, description, banner_color, rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+  insCanteen.run('KNT-01', 'Kantin Bu Siti - Nusantara', 'Bu Siti Aminah', 'Kantin Utama Blok A (No. 1)', 'Makanan Berat', 'Nasi goreng spesial, soto ayam, dan aneka lauk hangat.', 'from-emerald-600 to-teal-700', 4.9);
+  insCanteen.run('KNT-02', 'Kedai Segar Pak Budi', 'Pak Budi Hartono', 'Selasar Tengah Blok B (No. 3)', 'Minuman & Es', 'Es teh jumbo, jus buah segar, es jeruk peras & kopi susu.', 'from-amber-500 to-orange-600', 4.8);
+  insCanteen.run('KNT-03', 'Warung Geprek & Cemilan Mbak Rina', 'Mbak Rina', 'Kantin Timur Blok C (No. 2)', 'Ayam & Snack', 'Ayam geprek sambal bawang, dimsum, risoles mayo & kentang.', 'from-rose-600 to-pink-700', 4.9);
+
+  const insMenu = db.prepare('INSERT INTO canteen_menus (id, canteen_id, name, price, category, stock, description) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  insMenu.run('MNU-01', 'KNT-01', 'Nasi Goreng Spesial Telur', 13000, 'Makanan', 30, 'Nasi goreng bumbu rempah dengan telur mata sapi & kerupuk.');
+  insMenu.run('MNU-02', 'KNT-01', 'Soto Ayam Lamongan + Nasi', 12000, 'Makanan', 25, 'Kuah kaldu gurih dengan suwiran ayam dan koya.');
+  insMenu.run('MNU-03', 'KNT-01', 'Mie Goreng Jawa Komplit', 11000, 'Makanan', 20, 'Mie kuning dimasak manis gurih dengan sayuran segar.');
+  insMenu.run('MNU-04', 'KNT-02', 'Es Teh Manis Jumbo', 4000, 'Minuman', 60, 'Teh melati wangi dingin ukuran gelas besar.');
+  insMenu.run('MNU-05', 'KNT-02', 'Es Jeruk Peras Murni', 6000, 'Minuman', 40, 'Perasan jeruk segar tanpa pemanis buatan.');
+  insMenu.run('MNU-06', 'KNT-02', 'Jus Alpukat Coklat', 10000, 'Minuman', 20, 'Alpukat mentega kocok dengan susu kental manis coklat.');
+  insMenu.run('MNU-07', 'KNT-03', 'Paket Ayam Geprek + Nasi', 14000, 'Makanan', 35, 'Ayam krispi geprek level pedas sesuai selera.');
+  insMenu.run('MNU-08', 'KNT-03', 'Dimsum Ayam Isi 4', 10000, 'Snack', 30, 'Dimsum ayam lembut lengkap dengan saus mentai/chili oil.');
+  insMenu.run('MNU-09', 'KNT-03', 'Risoles Mayo Beef (2 pcs)', 7000, 'Snack', 40, 'Risoles isi smoked beef, telur, dan mayones lumer.');
+}
+
+// Pastikan setiap siswa punya dompet penghasilan jastip
+db.prepare(`
+  INSERT OR IGNORE INTO jastip_wallets (student_id, earned_balance, total_withdrawn, completed_jobs)
+  SELECT id, 0, 0, 0 FROM students
+`).run();
+
+// 1. Ambil seluruh data ekosistem Multi-Kantin & Jastip Sosial
+app.get('/api/ecosystem', (req, res) => {
+  const { studentId } = req.query;
+  const canteens = db.prepare('SELECT * FROM canteens ORDER BY created_at DESC').all();
+  const menus = db.prepare('SELECT * FROM canteen_menus WHERE stock > 0 ORDER BY category, name').all();
+  const runners = db.prepare(`
+    SELECT r.*, s.name as student_name, s.kelas as class_name, c.name as canteen_name, c.location as canteen_location
+    FROM jastip_runners r
+    JOIN students s ON r.student_id = s.id
+    LEFT JOIN canteens c ON r.canteen_id = c.id
+    WHERE r.is_active = 1
+    ORDER BY r.updated_at DESC
+  `).all();
+
+  const orders = db.prepare(`
+    SELECT o.*,
+           ord.name as orderer_name, ord.kelas as orderer_class,
+           run.name as runner_name,
+           c.name as canteen_name, c.location as canteen_location
+    FROM jastip_orders o
+    JOIN students ord ON o.orderer_id = ord.id
+    LEFT JOIN students run ON o.runner_id = run.id
+    JOIN canteens c ON o.canteen_id = c.id
+    ORDER BY o.created_at DESC LIMIT 40
+  `).all();
+
+  let wallet = { earned_balance: 0, total_withdrawn: 0, completed_jobs: 0 };
+  let myRunnerStatus = { is_active: 0, canteen_id: 'KNT-01', note: 'Lagi di kantin nih, yuk titip!' };
+
+  if (studentId) {
+    db.prepare('INSERT OR IGNORE INTO jastip_wallets (student_id, earned_balance, total_withdrawn, completed_jobs) VALUES (?, 0, 0, 0)').run(studentId);
+    wallet = db.prepare('SELECT * FROM jastip_wallets WHERE student_id = ?').get(studentId) || wallet;
+    myRunnerStatus = db.prepare('SELECT * FROM jastip_runners WHERE student_id = ?').get(studentId) || myRunnerStatus;
+  }
+
+  res.json({ canteens, menus, runners, orders, wallet, myRunnerStatus });
+});
+
+// 2. Pendaftaran Stan Kantin Baru (Merchant Registration)
+app.post('/api/canteens/register', (req, res) => {
+  const { name, owner_name, location, category, description, banner_color } = req.body;
+  if (!name || !owner_name || !location) {
+    return res.status(400).json({ error: 'Nama kantin, nama pemilik, dan lokasi wajib diisi!' });
+  }
+  const id = 'KNT-' + Math.floor(100 + Math.random() * 900);
+  db.prepare(`
+    INSERT INTO canteens (id, name, owner_name, location, category, description, banner_color)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(id, name.trim(), owner_name.trim(), location.trim(), category || 'Makanan & Minuman', description || 'Stan kantin terdaftar resmi sekolah.', banner_color || 'from-emerald-600 to-teal-700');
+
+  res.json({ message: 'Stan kantin berhasil didaftarkan!', canteenId: id });
+});
+
+// 3. Tambah Menu Makanan/Minuman ke Stan Kantin Tertentu
+app.post('/api/canteens/:canteenId/menus', (req, res) => {
+  const { canteenId } = req.params;
+  const { name, price, category, stock, description } = req.body;
+  const canteen = db.prepare('SELECT * FROM canteens WHERE id = ?').get(canteenId);
+  if (!canteen) return res.status(404).json({ error: 'Stan kantin tidak ditemukan!' });
+  if (!name || !price || Number(price) <= 0) return res.status(400).json({ error: 'Nama menu dan harga valid wajib diisi!' });
+
+  const id = 'MNU-' + Date.now().toString().slice(-6);
+  db.prepare(`
+    INSERT INTO canteen_menus (id, canteen_id, name, price, category, stock, description)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(id, canteenId, name.trim(), Number(price), category || 'Makanan', Number(stock) || 30, description || 'Menu segar siap saji.');
+
+  res.json({ message: 'Menu berhasil ditambahkan ke ' + canteen.name });
+});
+
+// 4. Toggle Status Siap Jastip Siswa (Social Runner Mode)
+app.post('/api/jastip/toggle', (req, res) => {
+  const { studentId, isActive, canteenId, note } = req.body;
+  const student = db.prepare('SELECT * FROM students WHERE id = ?').get(studentId);
+  if (!student) return res.status(404).json({ error: 'Siswa tidak ditemukan!' });
+
+  db.prepare(`
+    INSERT INTO jastip_runners (student_id, is_active, canteen_id, note, updated_at)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(student_id) DO UPDATE SET
+      is_active = excluded.is_active,
+      canteen_id = excluded.canteen_id,
+      note = excluded.note,
+      updated_at = CURRENT_TIMESTAMP
+  `).run(studentId, isActive ? 1 : 0, canteenId || 'KNT-01', note || 'Siap bantu titip jajan!');
+
+  res.json({ message: isActive ? 'Mode Siap Jastip AKTIF! Profil Anda tampil di feed sosial.' : 'Mode Jastip dinonaktifkan.' });
+});
+
+// 5. Buat Pesanan GoFood-Style (Ambil Sendiri atau Titip Jastip dengan Uang Jajan 5rb-20rb)
+app.post('/api/jastip/orders', (req, res) => {
+  const { ordererId, runnerId, canteenId, items, tipAmount, deliveryNote } = req.body;
+  const allowedTips = [0, 5000, 10000, 15000, 20000];
+  const tip = Number(tipAmount) || 0;
+
+  if (!allowedTips.includes(tip)) {
+    return res.status(400).json({ error: 'Kesepakatan uang jajan harus Rp 5.000, Rp 10.000, Rp 15.000, atau Rp 20.000.' });
+  }
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Keranjang pesanan masih kosong!' });
+  }
+  if (runnerId && runnerId === ordererId) {
+    return res.status(400).json({ error: 'Tidak bisa menitip jastip ke diri sendiri.' });
+  }
+
+  const orderer = db.prepare('SELECT * FROM students WHERE id = ?').get(ordererId);
+  if (!orderer) return res.status(404).json({ error: 'Akun pemesan tidak valid!' });
+
+  let foodTotal = 0;
+  for (const item of items) {
+    foodTotal += Number(item.price) * Number(item.qty);
+  }
+  const grandTotal = foodTotal + tip;
+
+  if (orderer.balance < grandTotal) {
+    return res.status(400).json({ error: `Saldo tidak cukup! Total Rp ${grandTotal.toLocaleString()}, saldo Anda Rp ${orderer.balance.toLocaleString()}.` });
+  }
+
+  const orderId = 'JST-' + Date.now().toString().slice(-6);
+  const initialStatus = tip === 0 ? 'AMBIL_SENDIRI' : (runnerId ? 'DIAMBIL_RUNNER' : 'MENUNGGU_RUNNER');
+
+  const createOrderTx = db.transaction(() => {
+    db.prepare('UPDATE students SET balance = balance - ? WHERE id = ?').run(grandTotal, ordererId);
+    for (const item of items) {
+      db.prepare('UPDATE canteen_menus SET stock = MAX(0, stock - ?) WHERE id = ?').run(Number(item.qty), item.id);
+    }
+    db.prepare(`
+      INSERT INTO jastip_orders (id, orderer_id, runner_id, canteen_id, items_json, food_total, tip_amount, grand_total, delivery_note, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(orderId, ordererId, runnerId || null, canteenId, JSON.stringify(items), foodTotal, tip, grandTotal, deliveryNote || 'Antar ke kelas', initialStatus);
+  });
+
+  createOrderTx();
+  res.json({ message: tip > 0 ? 'Pesanan Jastip berhasil dibuat & dana ditahan aman (Escrow)!' : 'Pesanan GoFood Kantin berhasil dibuat!', orderId });
+});
+
+// 6. Siswa Runner Mengambil / Mengantar / Menyelesaikan Order Jastip -> Uang Jajan Masuk Dasbor
+app.post('/api/jastip/orders/:orderId/action', (req, res) => {
+  const { orderId } = req.params;
+  const { studentId, action } = req.body; // action: 'ACCEPT', 'DELIVERING', 'COMPLETE'
+  const order = db.prepare('SELECT * FROM jastip_orders WHERE id = ?').get(orderId);
+  if (!order) return res.status(404).json({ error: 'Pesanan tidak ditemukan!' });
+
+  if (action === 'ACCEPT') {
+    if (order.status !== 'MENUNGGU_RUNNER') return res.status(400).json({ error: 'Orderan ini sudah diambil runner lain!' });
+    if (order.orderer_id === studentId) return res.status(400).json({ error: 'Tidak bisa mengambil orderan sendiri!' });
+    db.prepare('UPDATE jastip_orders SET runner_id = ?, status = ? WHERE id = ?').run(studentId, 'DIAMBIL_RUNNER', orderId);
+    return res.json({ message: 'Orderan jastip berhasil diambil! Segera belikan di stan kantin.' });
+  }
+
+  if (action === 'DELIVERING') {
+    db.prepare('UPDATE jastip_orders SET status = ? WHERE id = ?').run('DIANTAR_KE_KELAS', orderId);
+    return res.json({ message: 'Status diperbarui: Pesanan sedang diantar ke pemesan!' });
+  }
+
+  if (action === 'COMPLETE') {
+    if (order.status === 'SELESAI') return res.status(400).json({ error: 'Pesanan ini sudah selesai.' });
+    const completeTx = db.transaction(() => {
+      db.prepare('UPDATE jastip_orders SET status = ? WHERE id = ?').run('SELESAI', orderId);
+      if (order.runner_id && order.tip_amount > 0) {
+        db.prepare('INSERT OR IGNORE INTO jastip_wallets (student_id, earned_balance, total_withdrawn, completed_jobs) VALUES (?, 0, 0, 0)').run(order.runner_id);
+        db.prepare(`
+          UPDATE jastip_wallets
+          SET earned_balance = earned_balance + ?,
+              completed_jobs = completed_jobs + 1
+          WHERE student_id = ?
+        `).run(order.tip_amount, order.runner_id);
+      }
+    });
+    completeTx();
+    return res.json({ message: `Pesanan selesai! Uang Jajan Rp ${order.tip_amount.toLocaleString()} telah masuk ke Dompet Jastip Runner.` });
+  }
+
+  res.status(400).json({ error: 'Aksi tidak dikenal.' });
+});
+
+// 7. Pencairan Hasil "Uang Jajan" Jastip ke Saldo Utama Siswa
+app.post('/api/jastip/withdraw', (req, res) => {
+  const { studentId } = req.body;
+  const wallet = db.prepare('SELECT * FROM jastip_wallets WHERE student_id = ?').get(studentId);
+  if (!wallet || wallet.earned_balance <= 0) {
+    return res.status(400).json({ error: 'Belum ada saldo Uang Jajan Jastip yang bisa dicairkan.' });
+  }
+  const amount = wallet.earned_balance;
+  const withdrawTx = db.transaction(() => {
+    db.prepare('UPDATE jastip_wallets SET earned_balance = 0, total_withdrawn = total_withdrawn + ? WHERE student_id = ?').run(amount, studentId);
+    db.prepare('UPDATE students SET balance = balance + ? WHERE id = ?').run(amount, studentId);
+  });
+  withdrawTx();
+
+  res.json({ message: `Berhasil mencairkan Uang Jajan sebesar Rp ${amount.toLocaleString()} ke Saldo Utama myKantin!`, amount });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`🛡️ myKantin Hardened Server berjalan di http://localhost:${PORT}`);

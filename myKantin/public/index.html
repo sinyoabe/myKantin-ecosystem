@@ -658,7 +658,21 @@
                     <p id="navUserName" class="text-sm font-bold text-slate-800"></p>
                     <p id="navUserSub" class="text-xs text-slate-500"></p>
                 </div>
-                <button onclick="logout()" class="px-3.5 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold flex items-center gap-1.5 transition"><i data-lucide="log-out" class="w-4 h-4"></i> Keluar</button>
+                <!-- QUICK TOGGLE STATUS JASTIP + TOOLTIP KETERANGAN (POJOK KANAN ATAS) -->
+        <div id="navJastipWrapper" class="relative">
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-sm">
+            <span id="navJastipLabel" class="text-[11px] font-extrabold text-slate-600 hidden md:inline">Siap Jastip</span>
+            <label class="relative inline-flex items-center cursor-pointer" title="Geser untuk aktifkan/nonaktifkan Mode Jastip">
+              <input type="checkbox" id="topJastipToggle" onchange="handleTopJastipToggle(this.checked)" class="sr-only peer">
+              <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
+            <button type="button" onclick="toggleTopJastipPopover()" class="text-slate-400 hover:text-emerald-600 transition cursor-pointer" title="Detail Lokasi & Status Jastip">
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          </div>
+        <button onclick="logout()" class="px-3.5 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold flex items-center gap-1.5 transition"><i data-lucide="log-out" class="w-4 h-4"></i> Keluar</button>
             </div>
         </div>
     </nav>
@@ -954,6 +968,44 @@
                 <i id="chevChat" data-lucide="chevron-down" class="w-4 h-4 chevron-icon opacity-90"></i>
             </button>
         </div>
+    <!-- BANNER EKOSISTEM GOFOOD KANTIN & DOMPET UANG JAJAN JASTIP -->
+    <div class="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+      <button type="button" onclick="openEcosystemHub('explore')" class="lg:col-span-7 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white rounded-2xl p-4 shadow-lg shadow-orange-500/20 flex items-center justify-between text-left transition transform hover:-translate-y-0.5 cursor-pointer">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
+            <i data-lucide="bike" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-base">Pesan Kantin (GoFood) & Jastip Sosial</span>
+              <span class="px-2 py-0.5 rounded-full bg-white text-orange-600 text-[10px] font-black uppercase">Baru</span>
+            </div>
+            <p class="text-xs text-amber-50 mt-0.5">Jelajahi stan kantin terdaftar, titip jajan ke teman, atau aktifkan Toggle Jastip!</p>
+          </div>
+        </div>
+        <div class="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+          <i data-lucide="arrow-right" class="w-5 h-5"></i>
+        </div>
+      </button>
+
+      <div class="lg:col-span-5 bg-white border border-emerald-200/80 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+        <div>
+          <p class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
+            <i data-lucide="coins" class="w-3.5 h-3.5"></i> Dompet Uang Jajan (Jastip)
+          </p>
+          <p id="dashJastipEarned" class="text-xl font-black text-slate-900 mt-0.5">Rp 0</p>
+          <p id="dashJastipStats" class="text-[11px] text-slate-500">0 misi selesai • Total cair: Rp 0</p>
+        </div>
+        <div class="flex flex-col gap-1.5 shrink-0">
+          <button type="button" onclick="withdrawJastipWallet()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer flex items-center gap-1.5">
+            <i data-lucide="banknote" class="w-3.5 h-3.5"></i> Cairkan
+          </button>
+          <button type="button" onclick="openEcosystemHub('social')" class="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] transition cursor-pointer text-center">
+            Toggle Jastip
+          </button>
+        </div>
+      </div>
+    </div>
 
         <!-- KONTEN ACCORDION 1: PRE-ORDER ISTIRAHAT (DENGAN KATEGORI CERDAS) -->
         <div id="accPreorderContent" class="accordion-content">
@@ -3030,5 +3082,835 @@
             refreshData();
         }
     </script>
+
+<!-- ================= MODAL EKOSISTEM MULTI-KANTIN (GOFOOD) & JASTIP SOSIAL ================= -->
+<div id="ecosystemHubModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+  <div class="bg-[#f8fafc] w-full max-w-6xl rounded-3xl shadow-2xl border border-white overflow-hidden flex flex-col max-h-[94vh]">
+    
+    <!-- Header Hub -->
+    <div class="bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-900 text-white px-5 py-4 flex flex-wrap items-center justify-between gap-3 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center font-black shadow-lg">
+          <i data-lucide="utensils-crossed" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="font-extrabold text-base sm:text-lg tracking-tight flex items-center gap-2">
+            myKantin GoFood & Social Jastip
+            <span id="hubRunnerBadge" class="hidden px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-bold">● MODE JASTIP AKTIF</span>
+          </h2>
+          <p class="text-[11px] text-slate-300">Pesan menu lintas stan kantin sekolah atau bantu titip jajan & dapatkan Uang Jajan!</p>
+        </div>
+      </div>
+
+      <!-- Navigasi Tab Utama -->
+      <div class="flex items-center gap-1.5 bg-white/10 p-1 rounded-2xl">
+        <button type="button" id="ecoTabExplore" onclick="switchEcosystemTab('explore')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-slate-900 shadow transition cursor-pointer flex items-center gap-1.5">
+          <i data-lucide="store" class="w-3.5 h-3.5 text-orange-500"></i> Jelajah Kantin
+        </button>
+        <button type="button" id="ecoTabSocial" onclick="switchEcosystemTab('social')" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition cursor-pointer flex items-center gap-1.5">
+          <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-400"></i> Feed Jastip Sosial
+        </button>
+        <button type="button" id="ecoTabRegister" onclick="switchEcosystemTab('register')" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition cursor-pointer flex items-center gap-1.5">
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-amber-400"></i> Daftar Kantin / Menu
+        </button>
+        <button type="button" onclick="document.getElementById('ecosystemHubModal').classList.add('hidden')" class="ml-1 w-8 h-8 rounded-xl bg-rose-500/20 hover:bg-rose-500 text-rose-200 hover:text-white flex items-center justify-center transition cursor-pointer" title="Tutup">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Body Konten Scrollable -->
+    <div class="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
+
+      <!-- ==================== TAB 1: JELAJAH KANTIN (GOFOOD STYLE) ==================== -->
+      <div id="ecoPanelExplore" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-8 space-y-4">
+          <div id="canteenListView" class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="font-extrabold text-slate-800 text-base">Pilih Stan Kantin Sekolah</h3>
+                <p class="text-xs text-slate-500">Klik stan kantin untuk melihat menu makanan & minuman serta menitip pesanan.</p>
+              </div>
+              <span id="activeRunnerPill" class="px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+                0 Siswa Siap Jastip Sekarang
+              </span>
+            </div>
+            <div id="canteenCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+          </div>
+
+          <div id="canteenStorefrontView" class="hidden space-y-4">
+            <button type="button" onclick="backToCanteenList()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-sm cursor-pointer">
+              <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Semua Stan Kantin
+            </button>
+
+            <div id="storefrontBanner" class="rounded-3xl p-5 text-white bg-gradient-to-r from-emerald-600 to-teal-700 shadow-lg">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <span id="sfCategory" class="px-2.5 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider">Makanan</span>
+                  <h3 id="sfName" class="text-xl sm:text-2xl font-black mt-1.5">Nama Kantin</h3>
+                  <p id="sfLocation" class="text-xs text-white/90 mt-1 flex items-center gap-1.5">Lokasi</p>
+                  <p id="sfDesc" class="text-xs text-white/80 mt-1">Deskripsi</p>
+                </div>
+                <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-2xl text-right">
+                  <p class="text-[10px] uppercase font-bold text-white/80">Mitra Pengelola</p>
+                  <p id="sfOwner" class="text-xs font-extrabold">Pemilik</p>
+                  <p id="sfRating" class="text-xs font-bold text-amber-300 mt-0.5">★ 4.9</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="font-extrabold text-slate-800 text-sm mb-3">Daftar Makanan & Minuman Tersedia</h4>
+              <div id="storefrontMenusGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keranjang & Pengaturan Titip Jastip -->
+        <div class="lg:col-span-4">
+          <div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm sticky top-0 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 class="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+                <i data-lucide="shopping-bag" class="w-4 h-4 text-orange-500"></i> Keranjang Pesanan
+              </h4>
+              <button type="button" onclick="clearEcoCart()" class="text-[11px] font-bold text-rose-500 hover:underline cursor-pointer">Kosongkan</button>
+            </div>
+
+            <div id="ecoCartItems" class="space-y-2 max-h-48 overflow-y-auto text-xs text-slate-500">
+              <p class="text-center py-6 text-slate-400">Belum ada makanan/minuman dipilih.</p>
+            </div>
+
+            <div class="border-t border-slate-100 pt-3 space-y-3">
+              <label class="block text-xs font-extrabold text-slate-700">Metode Pengambilan / Jastip:</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="btnModePickup" onclick="setOrderDeliveryMode('pickup')" class="py-2 px-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-50 text-emerald-800 font-bold text-xs cursor-pointer">
+                  Ambil Sendiri (Rp 0)
+                </button>
+                <button type="button" id="btnModeJastip" onclick="setOrderDeliveryMode('jastip')" class="py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-xs cursor-pointer">
+                  Titip Jastip (+Tip)
+                </button>
+              </div>
+
+              <div id="jastipOptionsBox" class="hidden bg-amber-50/80 border border-amber-200 rounded-2xl p-3 space-y-2.5">
+                <div>
+                  <label class="block text-[11px] font-extrabold text-amber-900 mb-1">Kesepakatan "Uang Jajan" Kurir:</label>
+                  <div class="grid grid-cols-4 gap-1.5">
+                    <button type="button" onclick="selectJastipTip(5000)" class="tip-btn py-1.5 rounded-lg bg-amber-500 text-white font-extrabold text-[11px] cursor-pointer" data-tip="5000">5rb</button>
+                    <button type="button" onclick="selectJastipTip(10000)" class="tip-btn py-1.5 rounded-lg bg-white border border-amber-300 text-amber-800 font-extrabold text-[11px] cursor-pointer" data-tip="10000">10rb</button>
+                    <button type="button" onclick="selectJastipTip(15000)" class="tip-btn py-1.5 rounded-lg bg-white border border-amber-300 text-amber-800 font-extrabold text-[11px] cursor-pointer" data-tip="15000">15rb</button>
+                    <button type="button" onclick="selectJastipTip(20000)" class="tip-btn py-1.5 rounded-lg bg-white border border-amber-300 text-amber-800 font-extrabold text-[11px] cursor-pointer" data-tip="20000">20rb</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-extrabold text-amber-900 mb-1">Pilih Teman yang Lagi di Kantin:</label>
+                  <select id="ecoRunnerSelect" class="w-full px-2.5 py-2 rounded-xl bg-white border border-amber-300 text-xs font-semibold text-slate-800 outline-none">
+                    <option value="">Siapa saja yang siap jastip (Broadcast)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-extrabold text-amber-900 mb-1">Catatan Lokasi Antar (Kelas/Meja):</label>
+                  <input type="text" id="ecoDeliveryNote" placeholder="Contoh: Antar ke XII IPA 1 meja pojok" class="w-full px-2.5 py-1.5 rounded-xl bg-white border border-amber-300 text-xs outline-none">
+                </div>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-100 pt-3 space-y-1 text-xs">
+              <div class="flex justify-between text-slate-500">
+                <span>Subtotal Makanan/Minuman</span>
+                <span id="ecoSubTotal" class="font-bold text-slate-700">Rp 0</span>
+              </div>
+              <div class="flex justify-between text-amber-700">
+                <span>Uang Jajan (Jastip)</span>
+                <span id="ecoTipTotal" class="font-bold">Rp 0</span>
+              </div>
+              <div class="flex justify-between text-sm font-black text-slate-900 pt-1 border-t border-dashed border-slate-200">
+                <span>Total Bayar (Escrow)</span>
+                <span id="ecoGrandTotal" class="text-emerald-700">Rp 0</span>
+              </div>
+            </div>
+
+            <button type="button" onclick="submitEcoOrder()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-emerald-600/20 transition cursor-pointer">
+              Pesan Sekarang →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 2: FEED SOSIAL JASTIP & TOGGLE SIAP JASTIP ==================== -->
+      <div id="ecoPanelSocial" class="hidden space-y-6">
+        <div class="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+          <div class="space-y-1.5 max-w-xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold">
+              <i data-lucide="radio" class="w-3.5 h-3.5 animate-pulse"></i> Mode Jastip Sosial Siswa
+            </div>
+            <h3 class="text-lg sm:text-xl font-black">Lagi di Kantin? Geser Toggle untuk Buka Jastip!</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Aktifkan status Anda agar muncul di beranda teman-teman. Setiap pesanan yang berhasil Anda antarkan menghasilkan <b>Uang Jajan (Rp 5.000 – Rp 20.000)</b> yang langsung masuk ke dasbor Anda!
+            </p>
+          </div>
+
+          <div class="w-full lg:w-auto bg-white/10 backdrop-blur border border-white/15 rounded-2xl p-4 space-y-3 min-w-[300px]">
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-amber-300">Status Siap Jastip</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="jastipStatusToggle" onchange="toggleJastipRunnerStatus()" class="sr-only peer">
+                <div class="w-14 h-7 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+
+            <div class="space-y-2">
+              <select id="myRunnerCanteenSelect" onchange="if(document.getElementById('jastipStatusToggle').checked) toggleJastipRunnerStatus();" class="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-white/20 text-xs text-white font-semibold outline-none">
+                <option value="KNT-01">Lokasi: Kantin Bu Siti - Blok A</option>
+              </select>
+              <input type="text" id="myRunnerNoteInput" placeholder="Status medsos: Lagi antre di Bu Siti, yuk titip!" class="w-full px-3 py-1.5 rounded-xl bg-slate-900/80 border border-white/20 text-xs text-white placeholder-slate-400 outline-none">
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-5 space-y-3">
+            <h4 class="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+              <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i> Feed Siswa Siap Jastip di Kantin
+            </h4>
+            <div id="socialRunnersFeed" class="space-y-3"></div>
+          </div>
+
+          <div class="lg:col-span-7 space-y-3">
+            <h4 class="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+              <i data-lucide="clipboard-list" class="w-4 h-4 text-orange-500"></i> Misi Jastip Masuk & Pesanan Saya
+            </h4>
+            <div id="jastipOrdersBoard" class="space-y-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 3: HALAMAN PENDAFTARAN KANTIN & KELOLA MENU ==================== -->
+      <div id="ecoPanelRegister" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-6 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+          <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+              <i data-lucide="store" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-slate-800 text-base">Pendaftaran Stan Kantin Baru</h3>
+              <p class="text-xs text-slate-500">Daftarkan stan kantin sekolah agar tampil di beranda GoFood & Jastip.</p>
+            </div>
+          </div>
+
+          <form onsubmit="registerNewCanteen(event)" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Nama Stan / Warung Kantin *</label>
+              <input type="text" id="regCanteenName" placeholder="Contoh: Kantin Bakso & Mie Ayam Pak Kumis" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 outline-none" required>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Nama Pengelola / Pemilik *</label>
+                <input type="text" id="regCanteenOwner" placeholder="Contoh: Pak Kumis" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 outline-none" required>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Lokasi Stan di Sekolah *</label>
+                <input type="text" id="regCanteenLoc" placeholder="Contoh: Blok D No. 4" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 outline-none" required>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Kategori Utama</label>
+                <select id="regCanteenCat" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
+                  <option>Makanan Berat</option>
+                  <option>Minuman & Es</option>
+                  <option>Ayam & Snack</option>
+                  <option>Jajanan Sehat</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Tema Warna Kartu</label>
+                <select id="regCanteenColor" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
+                  <option value="from-emerald-600 to-teal-700">Hijau Zamrud</option>
+                  <option value="from-amber-500 to-orange-600">Oranye Hangat</option>
+                  <option value="from-rose-600 to-pink-700">Merah Muda / Berry</option>
+                  <option value="from-indigo-600 to-blue-700">Biru Modern</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Deskripsi Singkat Menu Andalan</label>
+              <input type="text" id="regCanteenDesc" placeholder="Contoh: Bakso urat sapi asli, mie ayam pangsit, dan es campur." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 outline-none">
+            </div>
+            <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow transition cursor-pointer">
+              + Daftarkan Stan Kantin Sekarang
+            </button>
+          </form>
+        </div>
+
+        <div class="lg:col-span-6 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+          <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+            <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">
+              <i data-lucide="utensils" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-slate-800 text-base">Tambah Menu Makanan / Minuman</h3>
+              <p class="text-xs text-slate-500">Isi etalase makanan & minuman pada halaman masing-masing stan kantin.</p>
+            </div>
+          </div>
+
+          <form onsubmit="addMenuToCanteen(event)" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Pilih Stan Kantin Terdaftar *</label>
+              <select id="menuTargetCanteen" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-semibold outline-none"></select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Nama Makanan / Minuman *</label>
+                <input type="text" id="menuItemName" placeholder="Contoh: Bakso Urat Komplit" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 outline-none" required>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Harga (Rp) *</label>
+                <input type="number" id="menuItemPrice" placeholder="12000" min="500" step="500" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 outline-none" required>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Jenis</label>
+                <select id="menuItemCat" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
+                  <option>Makanan</option>
+                  <option>Minuman</option>
+                  <option>Snack</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Stok Porsi Hari Ini</label>
+                <input type="number" id="menuItemStock" value="30" min="1" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 outline-none">
+              </div>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Keterangan Menu</label>
+              <input type="text" id="menuItemDesc" placeholder="Contoh: Disajikan hangat dengan sambal dan saos." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 outline-none">
+            </div>
+            <button type="submit" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs sm:text-sm shadow transition cursor-pointer">
+              + Tambahkan Menu ke Halaman Kantin
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ================= LOGIKA FRONTEND EKOSISTEM MULTI-KANTIN & JASTIP SOSIAL =================
+let ecoState = {
+  canteens: [],
+  menus: [],
+  runners: [],
+  orders: [],
+  wallet: { earned_balance: 0, total_withdrawn: 0, completed_jobs: 0 },
+  myRunnerStatus: { is_active: 0, canteen_id: 'KNT-01', note: '' },
+  selectedCanteenId: null,
+  cart: [],
+  deliveryMode: 'pickup',
+  tipAmount: 5000
+};
+
+function getLoggedStudentId() {
+  const el = document.getElementById('navUserSub');
+  if (!el) return null;
+  const txt = el.textContent || '';
+  const match = txt.match(/(SIS\d+)/i);
+  return match ? match[1].toUpperCase() : null;
+}
+
+async function loadEcosystemData() {
+  const sid = getLoggedStudentId();
+  try {
+    const res = await fetch('/api/ecosystem' + (sid ? '?studentId=' + encodeURIComponent(sid) : ''));
+    const data = await res.json();
+    ecoState.canteens = data.canteens || [];
+    ecoState.menus = data.menus || [];
+    ecoState.runners = data.runners || [];
+    ecoState.orders = data.orders || [];
+    ecoState.wallet = data.wallet || ecoState.wallet;
+    ecoState.myRunnerStatus = data.myRunnerStatus || ecoState.myRunnerStatus;
+
+    const earnedEl = document.getElementById('dashJastipEarned');
+    const statsEl = document.getElementById('dashJastipStats');
+    if (earnedEl) earnedEl.textContent = 'Rp ' + (ecoState.wallet.earned_balance || 0).toLocaleString('id-ID');
+    if (statsEl) statsEl.textContent = `${ecoState.wallet.completed_jobs || 0} misi selesai • Total cair: Rp ${(ecoState.wallet.total_withdrawn || 0).toLocaleString('id-ID')}`;
+
+    renderEcosystemUI();
+  } catch (err) {
+    console.error('Gagal memuat data ekosistem:', err);
+  }
+}
+
+function openEcosystemHub(tab = 'explore') {
+  document.getElementById('ecosystemHubModal').classList.remove('hidden');
+  switchEcosystemTab(tab);
+  loadEcosystemData();
+}
+
+function switchEcosystemTab(tab) {
+  ['explore', 'social', 'register'].forEach(t => {
+    const panel = document.getElementById('ecoPanel' + t.charAt(0).toUpperCase() + t.slice(1));
+    const btn = document.getElementById('ecoTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (panel) panel.classList.toggle('hidden', t !== tab);
+    if (btn) {
+      btn.className = t === tab
+        ? 'px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-slate-900 shadow transition cursor-pointer flex items-center gap-1.5'
+        : 'px-3.5 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition cursor-pointer flex items-center gap-1.5';
+    }
+  });
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderEcosystemUI() {
+  const badge = document.getElementById('hubRunnerBadge');
+  if (badge) badge.classList.toggle('hidden', !ecoState.myRunnerStatus.is_active);
+
+  const pill = document.getElementById('activeRunnerPill');
+  if (pill) pill.textContent = `${ecoState.runners.length} Siswa Siap Jastip Sekarang`;
+
+  ['myRunnerCanteenSelect', 'menuTargetCanteen'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = ecoState.canteens.map(c => `<option value="${c.id}">${c.name} (${c.location})</option>`).join('');
+    if (prev && ecoState.canteens.some(c => c.id === prev)) sel.value = prev;
+  });
+
+  const toggle = document.getElementById('jastipStatusToggle');
+  if (toggle) toggle.checked = Boolean(ecoState.myRunnerStatus.is_active);
+  if (ecoState.myRunnerStatus.canteen_id && document.getElementById('myRunnerCanteenSelect')) {
+    document.getElementById('myRunnerCanteenSelect').value = ecoState.myRunnerStatus.canteen_id;
+  }
+  if (ecoState.myRunnerStatus.note && document.getElementById('myRunnerNoteInput')) {
+    document.getElementById('myRunnerNoteInput').value = ecoState.myRunnerStatus.note;
+  }
+
+  const grid = document.getElementById('canteenCardsGrid');
+  if (grid) {
+    grid.innerHTML = ecoState.canteens.map(c => {
+      const menuCount = ecoState.menus.filter(m => m.canteen_id === c.id).length;
+      const runnersHere = ecoState.runners.filter(r => r.canteen_id === c.id);
+      return `
+        <div onclick="openCanteenStorefront('${c.id}')" class="group bg-white border border-slate-200/90 hover:border-emerald-500 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition cursor-pointer flex flex-col justify-between">
+          <div class="p-4 bg-gradient-to-r ${c.banner_color || 'from-emerald-600 to-teal-700'} text-white">
+            <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
+              <span class="px-2 py-0.5 rounded-full bg-white/20">${c.category}</span>
+              <span class="px-2 py-0.5 rounded-full bg-black/20 text-amber-300">★ ${c.rating || '4.9'}</span>
+            </div>
+            <h4 class="font-extrabold text-base mt-2 group-hover:underline">${c.name}</h4>
+            <p class="text-[11px] text-white/85 mt-0.5">${c.location}</p>
+          </div>
+          <div class="p-4 space-y-2.5">
+            <p class="text-xs text-slate-600 line-clamp-2">${c.description || ''}</p>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+              <span class="font-bold text-slate-700">${menuCount} Menu Tersedia</span>
+              ${runnersHere.length > 0
+                ? `<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold">● ${runnersHere.length} Teman di Sini</span>`
+                : `<span class="text-slate-400">Bisa Pre-Order / Jastip</span>`
+              }
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (ecoState.selectedCanteenId) renderStorefrontMenus(ecoState.selectedCanteenId);
+
+  const runnerSel = document.getElementById('ecoRunnerSelect');
+  if (runnerSel) {
+    const sid = getLoggedStudentId();
+    const otherRunners = ecoState.runners.filter(r => r.student_id !== sid);
+    runnerSel.innerHTML = `<option value="">Siapa saja yang siap jastip (Broadcast)</option>` +
+      otherRunners.map(r => `<option value="${r.student_id}">${r.student_name} (${r.class_name}) — di ${r.canteen_name}</option>`).join('');
+  }
+
+  const feedEl = document.getElementById('socialRunnersFeed');
+  if (feedEl) {
+    if (ecoState.runners.length === 0) {
+      feedEl.innerHTML = `<div class="bg-white border border-slate-200 rounded-2xl p-6 text-center text-xs text-slate-400">Belum ada siswa yang mengaktifkan mode Jastip saat ini. Jadilah yang pertama!</div>`;
+    } else {
+      feedEl.innerHTML = ecoState.runners.map(r => `
+        <div class="bg-white border border-emerald-200/80 rounded-2xl p-4 shadow-sm space-y-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center">
+                ${(r.student_name || 'S').slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <p class="text-xs font-extrabold text-slate-800">${r.student_name} <span class="font-normal text-slate-500">• ${r.class_name}</span></p>
+                <p class="text-[11px] font-bold text-emerald-700">📍 Sedang di ${r.canteen_name}</p>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">SIAP JASTIP</span>
+          </div>
+          <p class="text-xs text-slate-600 bg-slate-50 rounded-xl p-2.5 italic">"${r.note || 'Siap bantu titip jajan!'}"</p>
+          <button type="button" onclick="titipKeRunner('${r.canteen_id}', '${r.student_id}')" class="w-full py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs transition cursor-pointer">
+            Titip Jajan di ${r.canteen_name} →
+          </button>
+        </div>
+      `).join('');
+    }
+  }
+
+  const boardEl = document.getElementById('jastipOrdersBoard');
+  if (boardEl) {
+    const sid = getLoggedStudentId();
+    if (ecoState.orders.length === 0) {
+      boardEl.innerHTML = `<div class="bg-white border border-slate-200 rounded-2xl p-6 text-center text-xs text-slate-400">Belum ada transaksi jastip hari ini.</div>`;
+    } else {
+      boardEl.innerHTML = ecoState.orders.map(o => {
+        const items = JSON.parse(o.items_json || '[]');
+        const itemSummary = items.map(i => `${i.name} (${i.qty}x)`).join(', ');
+        const canAccept = o.status === 'MENUNGGU_RUNNER' && o.orderer_id !== sid && ecoState.myRunnerStatus.is_active;
+        const isMyJob = o.runner_id === sid && o.status !== 'SELESAI';
+        const isMyOrderConfirm = o.orderer_id === sid && (o.status === 'DIANTAR_KE_KELAS' || o.status === 'DIAMBIL_RUNNER');
+
+        return `
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="text-[10px] font-mono font-bold text-slate-400">#${o.id}</span>
+                <p class="text-xs font-extrabold text-slate-800">${o.orderer_name} (${o.orderer_class}) → ${o.canteen_name}</p>
+              </div>
+              <div class="text-right">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${o.status === 'SELESAI' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.status.replace(/_/g, ' ')}</span>
+                ${o.tip_amount > 0 ? `<p class="text-xs font-black text-emerald-700 mt-0.5">Uang Jajan: +Rp ${o.tip_amount.toLocaleString('id-ID')}</p>` : ''}
+              </div>
+            </div>
+            <p class="text-xs text-slate-600"><b>Pesanan:</b> ${itemSummary}</p>
+            <p class="text-[11px] text-slate-500"><b>Antar ke:</b> ${o.delivery_note || '-'} ${o.runner_name ? `• <b>Kurir:</b> ${o.runner_name}` : ''}</p>
+            <div class="flex flex-wrap gap-2 pt-1">
+              ${canAccept ? `<button type="button" onclick="handleJastipOrderAction('${o.id}', 'ACCEPT')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer">Ambil Misi Jastip Ini</button>` : ''}
+              ${isMyJob && o.status === 'DIAMBIL_RUNNER' ? `<button type="button" onclick="handleJastipOrderAction('${o.id}', 'DELIVERING')" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs cursor-pointer">Sedang Diantar ke Pemesan</button>` : ''}
+              ${(isMyJob || isMyOrderConfirm) ? `<button type="button" onclick="handleJastipOrderAction('${o.id}', 'COMPLETE')" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer">✓ Konfirmasi Selesai & Cairkan Uang Jajan</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  renderEcoCart();
+  if (window.lucide) lucide.createIcons();
+}
+
+function openCanteenStorefront(canteenId) {
+  const canteen = ecoState.canteens.find(c => c.id === canteenId);
+  if (!canteen) return;
+  if (ecoState.cart.length > 0 && ecoState.selectedCanteenId && ecoState.selectedCanteenId !== canteenId) {
+    if (!confirm('Pindah ke stan kantin lain akan mengosongkan keranjang saat ini. Lanjutkan?')) return;
+    ecoState.cart = [];
+  }
+  ecoState.selectedCanteenId = canteenId;
+  document.getElementById('canteenListView').classList.add('hidden');
+  document.getElementById('canteenStorefrontView').classList.remove('hidden');
+
+  const banner = document.getElementById('storefrontBanner');
+  banner.className = `rounded-3xl p-5 text-white bg-gradient-to-r ${canteen.banner_color || 'from-emerald-600 to-teal-700'} shadow-lg`;
+  document.getElementById('sfCategory').textContent = canteen.category;
+  document.getElementById('sfName').textContent = canteen.name;
+  document.getElementById('sfLocation').textContent = '📍 ' + canteen.location;
+  document.getElementById('sfDesc').textContent = canteen.description || '';
+  document.getElementById('sfOwner').textContent = canteen.owner_name;
+  document.getElementById('sfRating').textContent = '★ ' + (canteen.rating || '4.9');
+
+  renderStorefrontMenus(canteenId);
+  renderEcoCart();
+}
+
+function backToCanteenList() {
+  document.getElementById('canteenStorefrontView').classList.add('hidden');
+  document.getElementById('canteenListView').classList.remove('hidden');
+}
+
+function renderStorefrontMenus(canteenId) {
+  const menus = ecoState.menus.filter(m => m.canteen_id === canteenId);
+  const grid = document.getElementById('storefrontMenusGrid');
+  if (!grid) return;
+  if (menus.length === 0) {
+    grid.innerHTML = `<div class="col-span-2 bg-white border border-slate-200 rounded-2xl p-6 text-center text-xs text-slate-400">Belum ada menu di stan kantin ini. Tambahkan melalui tab "Daftar Kantin / Menu".</div>`;
+    return;
+  }
+  grid.innerHTML = menus.map(m => `
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-sm">
+      <div>
+        <div class="flex items-center justify-between">
+          <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">${m.category}</span>
+          <span class="text-[11px] text-slate-400">Stok: ${m.stock}</span>
+        </div>
+        <h5 class="font-extrabold text-slate-800 text-sm mt-1.5">${m.name}</h5>
+        <p class="text-[11px] text-slate-500 mt-0.5">${m.description || ''}</p>
+      </div>
+      <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+        <span class="font-black text-emerald-700 text-sm">Rp ${m.price.toLocaleString('id-ID')}</span>
+        <button type="button" onclick="addToEcoCart('${m.id}')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer">
+          + Tambah
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addToEcoCart(menuId) {
+  const menu = ecoState.menus.find(m => m.id === menuId);
+  if (!menu) return;
+  const existing = ecoState.cart.find(i => i.id === menuId);
+  if (existing) existing.qty += 1;
+  else ecoState.cart.push({ id: menu.id, name: menu.name, price: menu.price, qty: 1 });
+  renderEcoCart();
+}
+
+function clearEcoCart() {
+  ecoState.cart = [];
+  renderEcoCart();
+}
+
+function setOrderDeliveryMode(mode) {
+  ecoState.deliveryMode = mode;
+  const btnP = document.getElementById('btnModePickup');
+  const btnJ = document.getElementById('btnModeJastip');
+  const box = document.getElementById('jastipOptionsBox');
+  if (mode === 'pickup') {
+    btnP.className = 'py-2 px-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-50 text-emerald-800 font-bold text-xs cursor-pointer';
+    btnJ.className = 'py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-xs cursor-pointer';
+    box.classList.add('hidden');
+  } else {
+    btnJ.className = 'py-2 px-2.5 rounded-xl border-2 border-amber-500 bg-amber-50 text-amber-900 font-bold text-xs cursor-pointer';
+    btnP.className = 'py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-xs cursor-pointer';
+    box.classList.remove('hidden');
+  }
+  renderEcoCart();
+}
+
+function selectJastipTip(amount) {
+  ecoState.tipAmount = amount;
+  document.querySelectorAll('.tip-btn').forEach(btn => {
+    const val = Number(btn.getAttribute('data-tip'));
+    btn.className = val === amount
+      ? 'tip-btn py-1.5 rounded-lg bg-amber-500 text-white font-extrabold text-[11px] cursor-pointer shadow-sm'
+      : 'tip-btn py-1.5 rounded-lg bg-white border border-amber-300 text-amber-800 font-extrabold text-[11px] cursor-pointer';
+  });
+  renderEcoCart();
+}
+
+function renderEcoCart() {
+  const container = document.getElementById('ecoCartItems');
+  if (!container) return;
+  if (ecoState.cart.length === 0) {
+    container.innerHTML = `<p class="text-center py-6 text-slate-400">Belum ada makanan/minuman dipilih.</p>`;
+  } else {
+    container.innerHTML = ecoState.cart.map((item, idx) => `
+      <div class="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+        <div>
+          <p class="font-bold text-slate-800">${item.name}</p>
+          <p class="text-[11px] text-slate-500">Rp ${item.price.toLocaleString('id-ID')} × ${item.qty}</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="ecoState.cart[${idx}].qty > 1 ? ecoState.cart[${idx}].qty-- : ecoState.cart.splice(${idx}, 1); renderEcoCart();" class="w-6 h-6 rounded-lg bg-white border border-slate-200 font-bold text-slate-700 cursor-pointer">-</button>
+          <span class="font-bold text-slate-800 w-4 text-center">${item.qty}</span>
+          <button type="button" onclick="ecoState.cart[${idx}].qty++; renderEcoCart();" class="w-6 h-6 rounded-lg bg-white border border-slate-200 font-bold text-slate-700 cursor-pointer">+</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const sub = ecoState.cart.reduce((acc, i) => acc + i.price * i.qty, 0);
+  const tip = (ecoState.deliveryMode === 'jastip' && sub > 0) ? ecoState.tipAmount : 0;
+  document.getElementById('ecoSubTotal').textContent = 'Rp ' + sub.toLocaleString('id-ID');
+  document.getElementById('ecoTipTotal').textContent = 'Rp ' + tip.toLocaleString('id-ID');
+  document.getElementById('ecoGrandTotal').textContent = 'Rp ' + (sub + tip).toLocaleString('id-ID');
+}
+
+function titipKeRunner(canteenId, runnerId) {
+  switchEcosystemTab('explore');
+  openCanteenStorefront(canteenId);
+  setOrderDeliveryMode('jastip');
+  setTimeout(() => {
+    const sel = document.getElementById('ecoRunnerSelect');
+    if (sel) sel.value = runnerId;
+  }, 50);
+}
+
+async function submitEcoOrder() {
+  const sid = getLoggedStudentId();
+  if (!sid) return alert('Silakan login sebagai siswa terlebih dahulu.');
+  if (!ecoState.selectedCanteenId || ecoState.cart.length === 0) {
+    return alert('Pilih stan kantin dan tambahkan minimal 1 makanan/minuman!');
+  }
+  const tipAmount = ecoState.deliveryMode === 'jastip' ? ecoState.tipAmount : 0;
+  const runnerId = ecoState.deliveryMode === 'jastip' ? document.getElementById('ecoRunnerSelect').value : null;
+  const deliveryNote = ecoState.deliveryMode === 'jastip' ? document.getElementById('ecoDeliveryNote').value : 'Ambil langsung di stan kantin';
+
+  const res = await fetch('/api/jastip/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ordererId: sid,
+      runnerId,
+      canteenId: ecoState.selectedCanteenId,
+      items: ecoState.cart,
+      tipAmount,
+      deliveryNote
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Gagal membuat pesanan');
+
+  alert(data.message);
+  ecoState.cart = [];
+  if (typeof fetchAllData === 'function') fetchAllData();
+  await loadEcosystemData();
+  switchEcosystemTab('social');
+}
+
+async function toggleJastipRunnerStatus() {
+  const sid = getLoggedStudentId();
+  if (!sid) return;
+  const isActive = document.getElementById('jastipStatusToggle').checked;
+  const canteenId = document.getElementById('myRunnerCanteenSelect').value;
+  const note = document.getElementById('myRunnerNoteInput').value;
+
+  const res = await fetch('/api/jastip/toggle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ studentId: sid, isActive, canteenId, note })
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Gagal mengubah status jastip');
+  await loadEcosystemData();
+}
+
+async function handleJastipOrderAction(orderId, action) {
+  const sid = getLoggedStudentId();
+  const res = await fetch(`/api/jastip/orders/${orderId}/action`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ studentId: sid, action })
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Gagal memproses aksi');
+  alert(data.message);
+  await loadEcosystemData();
+}
+
+async function withdrawJastipWallet() {
+  const sid = getLoggedStudentId();
+  if (!sid) return;
+  const res = await fetch('/api/jastip/withdraw', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ studentId: sid })
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Gagal mencairkan Uang Jajan');
+  alert(data.message);
+  if (typeof fetchAllData === 'function') fetchAllData();
+  await loadEcosystemData();
+}
+
+async function registerNewCanteen(e) {
+  e.preventDefault();
+  const payload = {
+    name: document.getElementById('regCanteenName').value,
+    owner_name: document.getElementById('regCanteenOwner').value,
+    location: document.getElementById('regCanteenLoc').value,
+    category: document.getElementById('regCanteenCat').value,
+    banner_color: document.getElementById('regCanteenColor').value,
+    description: document.getElementById('regCanteenDesc').value
+  };
+  const res = await fetch('/api/canteens/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Gagal mendaftarkan kantin');
+  alert(data.message);
+  e.target.reset();
+  await loadEcosystemData();
+  switchEcosystemTab('explore');
+}
+
+async function addMenuToCanteen(e) {
+  e.preventDefault();
+  const canteenId = document.getElementById('menuTargetCanteen').value;
+  const payload = {
+    name: document.getElementById('menuItemName').value,
+    price: document.getElementById('menuItemPrice').value,
+    category: document.getElementById('menuItemCat').value,
+    stock: document.getElementById('menuItemStock').value,
+    description: document.getElementById('menuItemDesc').value
+  };
+  const res = await fetch(`/api/canteens/${canteenId}/menus`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || 'Gagal menambah menu');
+  alert(data.message);
+  e.target.reset();
+  await loadEcosystemData();
+  openCanteenStorefront(canteenId);
+  switchEcosystemTab('explore');
+}
+
+setInterval(() => {
+  if (getLoggedStudentId()) loadEcosystemData();
+}, 6000);
+</script>
+
+<!-- FLOATING TOOLTIP / POPOVER KETERANGAN TOGGLE JASTIP (FIXED DI ATAS DASBOR) -->
+<div id="topJastipPopover" class="hidden fixed top-16 right-4 sm:right-10 w-[340px] sm:w-[370px] rounded-3xl shadow-2xl shadow-slate-900/30 border border-emerald-500/30 overflow-hidden z-[9999] text-left transition-all">
+  <!-- Bagian Atas: Kartu Hijau Gelap Ringkas (Ala Banner Jastip) -->
+  <div class="bg-gradient-to-br from-emerald-950 via-teal-900 to-slate-900 text-white p-4 space-y-3">
+    <div class="flex items-start justify-between gap-2">
+      <div>
+        <span id="topJastipBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold">
+          <span id="topJastipDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Mode Jastip Sosial
+        </span>
+        <h4 id="topJastipTitle" class="text-sm font-black mt-1.5 leading-snug">Status Siap Jastip Aktif!</h4>
+        <p id="topJastipDesc" class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+          Pilih lokasi kantin & tulis status agar teman bisa menitip (Uang Jajan Rp 5rb–20rb).
+        </p>
+      </div>
+      <button type="button" onclick="document.getElementById('topJastipPopover').classList.add('hidden')" class="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center shrink-0 cursor-pointer">
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+
+    <!-- Form Ringkas Lokasi & Status Medsos -->
+    <div id="topJastipFormFields" class="bg-black/25 border border-white/10 rounded-2xl p-3 space-y-2">
+      <select id="topJastipCanteenSelect" onchange="saveTopJastipDetails()" class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-white font-semibold outline-none">
+        <option value="KNT-01">Lokasi: Kantin Bu Siti - Blok A</option>
+      </select>
+      <input type="text" id="topJastipNoteInput" placeholder="Status medsos: Lagi di kantin nih, mau nitip apa?" class="w-full px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-white placeholder-slate-400 outline-none">
+      <div class="flex items-center justify-between pt-1">
+        <button type="button" onclick="openEcosystemHub('social'); document.getElementById('topJastipPopover').classList.add('hidden');" class="text-[11px] font-bold text-amber-300 hover:underline cursor-pointer">
+          Buka Feed & Misi →
+        </button>
+        <button type="button" onclick="saveTopJastipDetails(true)" class="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow transition cursor-pointer">
+          Simpan Status
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bagian Bawah: Mini Ringkasan Feed & Misi Masuk -->
+  <div class="bg-white px-4 py-3 flex items-center justify-between text-[11px] text-slate-600 border-t border-slate-100">
+    <span id="miniPopoverFeedCount" class="font-bold text-slate-700 flex items-center gap-1.5">
+      <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-600"></i> 0 Teman di Kantin
+    </span>
+    <span id="miniPopoverOrderCount" class="font-bold text-orange-600 flex items-center gap-1.5">
+      <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> 0 Misi Jastip
+    </span>
+  </div>
+</div>
+
 </body>
 </html>
