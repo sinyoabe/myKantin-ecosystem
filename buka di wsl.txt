@@ -1,0 +1,3 @@
+wsl
+cd ~/myKantin && node server.js  <--- http://localhost:3000/
+cd ~/myPay && node gateway.js  <--- http://localhost:4000/

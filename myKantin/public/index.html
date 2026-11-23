@@ -84,6 +84,29 @@
             height: 100% !important;
         }
     </style>
+<style>
+  @keyframes coretaxFloatTop {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(0.6deg); }
+  }
+  @keyframes coretaxFloatBottom {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(9px) rotate(-0.6deg); }
+  }
+  .float-card-1 {
+    animation: coretaxFloatTop 5.5s ease-in-out infinite;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .float-card-2 {
+    animation: coretaxFloatBottom 6.4s ease-in-out infinite;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .float-card-1:hover, .float-card-2:hover {
+    animation-play-state: paused;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.14);
+    border-color: rgba(16, 185, 129, 0.5);
+  }
+</style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
@@ -356,40 +379,271 @@
     </div>
 
     <!-- ==================== 1. HALAMAN LOGIN ==================== -->
-    <div id="loginView" class="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden fade-in">
-            <div class="p-6 text-center bg-slate-900 text-white">
-                <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500 text-white mb-3 shadow-lg"><i data-lucide="shopping-bag" class="w-6 h-6"></i></div>
-                <h1 class="text-2xl font-extrabold tracking-tight">myKantin</h1>
-                <p class="text-xs text-slate-400 mt-1">Supermarket Sekolah, P2P Lending & Pre-Order</p>
-            </div>
-            <div class="grid grid-cols-2 border-b bg-slate-100 p-1.5 gap-1.5">
-                <button id="tabSiswa" onclick="switchLoginRole('siswa')" class="py-2.5 text-sm font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition flex items-center justify-center gap-2"><i data-lucide="graduation-cap" class="w-4 h-4"></i> Login Siswa</button>
-                <button id="tabKasir" onclick="switchLoginRole('kasir')" class="py-2.5 text-sm font-bold rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2"><i data-lucide="store" class="w-4 h-4"></i> Login Kasir / Admin</button>
-            </div>
-            <form id="loginForm" class="p-6 space-y-4">
-                <div>
-                    <label id="labelId" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">NIS / ID Siswa</label>
-                    <input type="text" id="loginId" placeholder="Contoh: SIS001" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none text-sm font-medium" required>
-                </div>
-                <div>
-                    <label id="labelPin" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">PIN Keamanan (4 Digit)</label>
-                    <input type="password" id="loginPin" placeholder="••••" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none text-sm font-medium" required>
-                </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
-                    <span>Masuk Aplikasi</span><i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </button>
-                <div id="demoHint" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 space-y-1">
-                    <p class="font-bold text-slate-700">💡 Akun Demo Siswa:</p>
-                    <p>• <b>SIS001</b> (Budi) | PIN: <b>1234</b></p>
-                    <p>• <b>SIS002</b> (Siti) | PIN: <b>5678</b></p>
-                    <p>• <b>SIS003</b> (Andi) | PIN: <b>1111</b></p>
-                </div>
-            </form>
-        </div>
+    <div id="loginView" class="min-h-screen w-full relative overflow-hidden bg-gradient-to-br from-[#f4f8f6] via-[#eef6f2] to-[#fef9ec] text-slate-800 flex flex-col justify-between">
+  <!-- Ornamen Cahaya Latar Belakang -->
+  <div class="pointer-events-none absolute -top-28 -left-28 w-[520px] h-[520px] rounded-full bg-emerald-200/35 blur-3xl"></div>
+  <div class="pointer-events-none absolute top-1/3 right-[-120px] w-[580px] h-[580px] rounded-full bg-amber-200/30 blur-3xl"></div>
+  <div class="pointer-events-none absolute -bottom-32 left-1/3 w-[500px] h-[500px] rounded-full bg-teal-200/30 blur-3xl"></div>
+
+  <!-- Header Portal Atas -->
+  <header class="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 pt-7 pb-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-md shadow-emerald-600/20">
+        <i data-lucide="utensils" class="w-5 h-5"></i>
+      </div>
+      <div class="flex items-center gap-2.5">
+        <span class="font-extrabold text-xl tracking-tight text-slate-900">myKantin</span>
+        <span class="h-5 w-[1.5px] bg-slate-300"></span>
+        <span class="text-xs font-semibold text-slate-500 tracking-wide uppercase">Smart School Canteen</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2.5">
+      <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-emerald-200/80 text-xs font-semibold text-emerald-700 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> myPay QRIS Terhubung
+      </span>
+      <div class="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur border border-slate-200/80 text-xs font-bold text-slate-700 shadow-sm flex items-center gap-1.5">
+        <span class="w-3.5 h-3.5 rounded-full overflow-hidden inline-flex flex-col border border-slate-200">
+          <span class="h-1/2 bg-red-600 w-full"></span>
+          <span class="h-1/2 bg-white w-full"></span>
+        </span>
+        ID
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== TAHAP 1: PORTAL SAMBUTAN & EDUKASI KANTIN ==================== -->
+  <section id="portalWelcomeStage" class="relative z-10 flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 py-8 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center fade-in">
+    <div class="lg:col-span-5 space-y-6">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/80 border border-amber-200 text-amber-800 text-xs font-bold tracking-wide">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-600"></i> Ekosistem Kantin Digital Sekolah
+      </div>
+
+      <div>
+        <h1 class="text-4xl sm:text-5xl font-black tracking-tight leading-none mb-4">
+          <span class="text-emerald-800">MY</span><span class="text-amber-500">KANTIN</span>
+        </h1>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 leading-snug">
+          Selamat Datang di Sistem Kantin Pintar Sekolah
+        </h2>
+      </div>
+
+      <p class="text-sm sm:text-base text-slate-600 leading-relaxed">
+        Platform transaksi kantin modern untuk <b>Siswa, Guru, dan Pengelola Kantin</b>. Nikmati kemudahan pesan menu sebelum jam istirahat (<i>Pre-Order</i>), pembayaran QRIS instan tanpa uang tunai, hingga pinjaman darurat siswa (<i>P2P Lending</i>) yang transparan.
+      </p>
+
+      <div class="pt-2 flex flex-wrap items-center gap-4">
+        <button type="button" onclick="document.getElementById('portalWelcomeStage').classList.add('hidden'); document.getElementById('portalLoginStage').classList.remove('hidden');" class="px-8 py-4 rounded-full bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800 text-white font-bold text-sm sm:text-base shadow-xl shadow-emerald-800/20 hover:shadow-emerald-800/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-3 cursor-pointer">
+          <span>Lanjutkan ke Login</span>
+          <i data-lucide="arrow-right" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="pt-2 flex items-center gap-6 text-xs text-slate-500 font-medium">
+        <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> PIN Terenkripsi SHA-256</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="zap" class="w-4 h-4 text-amber-500"></i> Bebas Antre Istirahat</span>
+      </div>
     </div>
 
-    <!-- ==================== 2. NAVBAR UTAMA ==================== -->
+    <!-- Kolom Kanan: Dua Kartu Kaca Berjenjang Melayang -->
+    <div class="lg:col-span-7 relative flex flex-col sm:block min-h-[420px] gap-5">
+      <div class="float-card-1 sm:w-[360px] bg-white/75 backdrop-blur-xl border border-white/90 rounded-3xl p-6 shadow-xl shadow-slate-900/5 sm:ml-6 relative z-20">
+        <div class="flex items-start gap-3.5 mb-5">
+          <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+            <i data-lucide="salad" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-800 text-base">Kantin Modern & Praktis</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Solusi jajan cepat, higienis, dan tercatat otomatis.</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="qr-code" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800">Dompet Digital & QRIS myPay</p>
+              <p class="text-[11px] text-slate-500 leading-relaxed">Bayar belanjaan cukup pindai kartu pelajar atau QRIS tanpa perlu uang kembalian.</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="clock" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800">Pre-Order Sebelum Bel Istirahat</p>
+              <p class="text-[11px] text-slate-500 leading-relaxed">Pesan makanan favorit dari kelas, ambil di loket saat pesanan siap.</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="hand-coins" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800">P2P Lending & Riwayat Transparan</p>
+              <p class="text-[11px] text-slate-500 leading-relaxed">Saling bantu saldo antar siswa dengan batas aman serta catatan mutasi jelas.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="float-card-2 sm:w-[360px] bg-white/75 backdrop-blur-xl border border-white/90 rounded-3xl p-6 shadow-xl shadow-slate-900/5 sm:ml-auto sm:-mt-24 relative z-10">
+        <div class="flex items-start gap-3.5 mb-5">
+          <div class="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+            <i data-lucide="shield-alert" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-slate-800 text-base">Hal yang Dihindari</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Jaga keamanan saldo dan akun kantin Anda.</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="key-round" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800">Membagikan PIN 4 Digit</p>
+              <p class="text-[11px] text-slate-500 leading-relaxed">Jangan pernah memberitahukan PIN keamanan akun kepada teman atau pihak lain.</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800">Lupa Keluar di Perangkat Bersama</p>
+              <p class="text-[11px] text-slate-500 leading-relaxed">Selalu tekan tombol Keluar setelah memakai terminal kasir atau komputer sekolah.</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="wallet" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800">Transaksi Tanpa Cek Saldo</p>
+              <p class="text-[11px] text-slate-500 leading-relaxed">Pastikan saldo dompet mencukupi atau lakukan top-up QRIS sebelum jam istirahat.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TAHAP 2: LAYAR LOGIN SPLIT-SCREEN (ALA CORETAX) ==================== -->
+  <section id="portalLoginStage" class="hidden relative z-10 flex-1 w-full max-w-7xl mx-auto px-6 lg:px-12 py-6 lg:py-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center fade-in">
+    <div class="lg:col-span-6 space-y-5">
+      <button type="button" onclick="document.getElementById('portalLoginStage').classList.add('hidden'); document.getElementById('portalWelcomeStage').classList.remove('hidden');" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white border border-slate-200 text-xs font-bold text-slate-600 shadow-sm transition cursor-pointer">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Kembali ke Beranda Informasi
+      </button>
+
+      <div>
+        <h1 class="text-4xl sm:text-5xl font-black tracking-tight leading-none mb-3">
+          <span class="text-emerald-800">MY</span><span class="text-amber-500">KANTIN</span>
+        </h1>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 leading-snug">
+          Sistem Inti Layanan Kantin & Dompet Siswa
+        </h2>
+        <p class="text-sm text-slate-500 font-medium mt-2">
+          Jajan Praktis, Antrean Habis, Keuangan Kantin Transparan
+        </p>
+      </div>
+
+      <div class="hidden lg:grid grid-cols-2 gap-3 pt-4 max-w-md">
+        <div class="p-3.5 rounded-2xl bg-white/65 backdrop-blur border border-white/80 shadow-sm">
+          <p class="text-xs font-extrabold text-emerald-700 flex items-center gap-1.5"><i data-lucide="store" class="w-4 h-4"></i> Smart POS</p>
+          <p class="text-[11px] text-slate-500 mt-1">Kasir cepat dengan pemindai QR pelajar & stok real-time.</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-white/65 backdrop-blur border border-white/80 shadow-sm">
+          <p class="text-xs font-extrabold text-amber-600 flex items-center gap-1.5"><i data-lucide="wallet-cards" class="w-4 h-4"></i> E-Wallet Siswa</p>
+          <p class="text-[11px] text-slate-500 mt-1">Top-up instan melalui gerbang pembayaran myPay.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-6 flex justify-center lg:justify-end">
+      <div class="w-full max-w-md bg-white/85 backdrop-blur-xl border border-white rounded-3xl shadow-2xl shadow-slate-900/10 p-7 sm:p-8">
+        <div class="mb-6">
+          <h3 class="text-2xl font-extrabold text-slate-800">Selamat Datang!</h3>
+          <p class="text-xs text-slate-500 mt-1">Masuk untuk mengakses Layanan Kantin Sekolah</p>
+        </div>
+
+        <div class="grid grid-cols-2 bg-slate-100/90 p-1.5 rounded-2xl gap-1.5 mb-5 border border-slate-200/60">
+          <button type="button" id="tabSiswa" onclick="switchLoginRole('siswa')" class="py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+            <i data-lucide="graduation-cap" class="w-4 h-4"></i> Login Siswa
+          </button>
+          <button type="button" id="tabKasir" onclick="switchLoginRole('kasir')" class="py-2.5 text-xs sm:text-sm font-bold rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2 cursor-pointer">
+            <i data-lucide="store" class="w-4 h-4"></i> Login Kasir / Admin
+          </button>
+        </div>
+
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label id="labelId" class="block text-xs font-bold text-slate-700 mb-1.5">NIS / ID Siswa</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                <i data-lucide="user" class="w-4 h-4"></i>
+              </span>
+              <input type="text" id="loginId" placeholder="Contoh: SIS001" class="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none text-sm font-medium text-slate-800 transition" required>
+            </div>
+          </div>
+
+          <div>
+            <label id="labelPin" class="block text-xs font-bold text-slate-700 mb-1.5">PIN Keamanan (4 Digit)</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+              </span>
+              <input type="password" id="loginPin" placeholder="••••" class="w-full pl-10 pr-10 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 outline-none text-sm font-medium text-slate-800 transition" required>
+              <button type="button" onclick="const p=document.getElementById('loginPin'); p.type=p.type==='password'?'text':'password';" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer" title="Lihat/Sembunyikan PIN">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800 text-white font-bold text-sm shadow-lg shadow-emerald-700/25 transition flex items-center justify-center gap-2 cursor-pointer mt-2">
+            <span>Masuk</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+
+          <div id="demoHint" class="mt-4 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 text-xs text-slate-600 space-y-1.5">
+            <p class="font-bold text-emerald-800 flex items-center gap-1.5">
+              <i data-lucide="info" class="w-3.5 h-3.5"></i> Akun Demo Siswa (Klik untuk isi cepat):
+            </p>
+            <div class="grid grid-cols-1 gap-1 pt-0.5">
+              <button type="button" onclick="document.getElementById('loginId').value='SIS001'; document.getElementById('loginPin').value='1234';" class="text-left px-2.5 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-emerald-100 flex items-center justify-between transition cursor-pointer">
+                <span><b>SIS001</b> (Budi)</span>
+                <span class="font-mono text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">PIN: 1234</span>
+              </button>
+              <button type="button" onclick="document.getElementById('loginId').value='SIS002'; document.getElementById('loginPin').value='5678';" class="text-left px-2.5 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-emerald-100 flex items-center justify-between transition cursor-pointer">
+                <span><b>SIS002</b> (Siti)</span>
+                <span class="font-mono text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">PIN: 5678</span>
+              </button>
+              <button type="button" onclick="document.getElementById('loginId').value='SIS003'; document.getElementById('loginPin').value='1111';" class="text-left px-2.5 py-1.5 rounded-lg bg-white/80 hover:bg-white border border-emerald-100 flex items-center justify-between transition cursor-pointer">
+                <span><b>SIS003</b> (Andi)</span>
+                <span class="font-mono text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">PIN: 1111</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer Portal -->
+  <footer class="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-12 py-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
+    <p>© 2026 myKantin Smart School Ecosystem • Terintegrasi dengan myPay Secure Gateway</p>
+    <p>Keamanan Transaksi: HMAC-SHA512 & SHA-256</p>
+  </footer>
+</div>
+
+<!-- ==================== 2. NAVBAR UTAMA ==================== -->
     <nav id="mainNav" class="hidden bg-white border-b sticky top-0 z-40 px-4 lg:px-8 py-3 shadow-sm">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-3">
