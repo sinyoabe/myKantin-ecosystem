@@ -5447,5 +5447,82 @@ async function clearSwChatHistory() {
 })();
 </script>
 
+
+
+
+
+<script id="mykantinRememberMeScript">
+(function() {
+  function injectRememberCheckbox() {
+    const pinInput = document.getElementById('loginPin');
+    if (!pinInput || document.getElementById('mkRememberMeWrap')) return;
+    const container = pinInput.closest('div') || pinInput.parentElement;
+    if (!container) return;
+
+    const wrap = document.createElement('label');
+    wrap.id = 'mkRememberMeWrap';
+    wrap.style.cssText = 'display:flex; align-items:center; gap:8px; margin-top:10px; margin-bottom:4px; cursor:pointer; user-select:none; font-size:12.5px; font-weight:600; color:#475569;';
+    wrap.innerHTML = '<input type="checkbox" id="mkRememberMe" checked style="width:16px; height:16px; accent-color:#059669; cursor:pointer; border-radius:4px;"> <span>Ingat saya (tetap masuk saat halaman di-refresh)</span>';
+    container.insertAdjacentElement('afterend', wrap);
+  }
+
+  // Bungkus initDashboard agar setiap kali masuk dasbor, session disimpan jika Remember Me aktif
+  if (typeof window.initDashboard === 'function' && !window.initDashboard._mkWrapped) {
+    const origInit = window.initDashboard;
+    window.initDashboard = function() {
+      const remCb = document.getElementById('mkRememberMe');
+      if (typeof session !== 'undefined' && session) {
+        if (!remCb || remCb.checked) {
+          try { localStorage.setItem('mykantin_remember_session', JSON.stringify(session)); } catch (e) {}
+        } else {
+          try { localStorage.removeItem('mykantin_remember_session'); } catch (e) {}
+        }
+      }
+      // Pastikan layar sambutan (landing) disembunyikan saat langsung masuk dasbor
+      const welcomeView = document.getElementById('welcomeScreen') || document.getElementById('landingScreen');
+      if (welcomeView) welcomeView.classList.add('hidden');
+      const authView = document.getElementById('authSection') || document.getElementById('loginSection');
+      if (authView) authView.classList.add('hidden');
+
+      return origInit.apply(this, arguments);
+    };
+    window.initDashboard._mkWrapped = true;
+  }
+
+  // Bungkus logout agar menghapus session tersimpan
+  if (typeof window.logout === 'function' && !window.logout._mkWrapped) {
+    const origLogout = window.logout;
+    window.logout = function() {
+      try { localStorage.removeItem('mykantin_remember_session'); } catch (e) {}
+      return origLogout.apply(this, arguments);
+    };
+    window.logout._mkWrapped = true;
+  }
+
+  function restoreSavedSession() {
+    injectRememberCheckbox();
+    try {
+      const saved = localStorage.getItem('mykantin_remember_session');
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') {
+        session = parsed;
+        if (typeof window.initDashboard === 'function') {
+          window.initDashboard();
+        }
+      }
+    } catch (e) {
+      try { localStorage.removeItem('mykantin_remember_session'); } catch (err) {}
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restoreSavedSession);
+  } else {
+    restoreSavedSession();
+  }
+})();
+</script>
+
 </body>
 </html>
