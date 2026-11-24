@@ -1031,6 +1031,97 @@ app.post('/api/jastip/withdraw', (req, res) => {
   res.json({ message: `Berhasil mencairkan Uang Jajan sebesar Rp ${amount.toLocaleString()} ke Saldo Utama myKantin!`, amount });
 });
 
+
+// ============================================================================
+// BERANDA SOSIAL MYKANTIN (FACEBOOK-STYLE WALL FEED, LIKE & KOMENTAR)
+// ============================================================================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS social_posts (
+    id TEXT PRIMARY KEY,
+    author_id TEXT NOT NULL,
+    author_name TEXT NOT NULL,
+    author_role TEXT DEFAULT 'Siswa',
+    content TEXT NOT NULL,
+    tag TEXT DEFAULT 'Status',
+    canteen_id TEXT,
+    likes_json TEXT DEFAULT '[]',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS social_comments (
+    id TEXT PRIMARY KEY,
+    post_id TEXT NOT NULL,
+    author_id TEXT NOT NULL,
+    author_name TEXT NOT NULL,
+    comment_text TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
+const postCount = db.prepare('SELECT COUNT(*) as c FROM social_posts').get().c;
+if (postCount === 0) {
+  const insPost = db.prepare('INSERT INTO social_posts (id, author_id, author_name, author_role, content, tag, canteen_id, likes_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+  insPost.run('PST-01', 'KNT-01', 'Kantin Bu Siti - Nusantara', 'Mitra Kantin', 'Selamat pagi anak-anak! Hari ini Nasi Goreng Spesial & Soto Ayam baru matang hangat. Yang malas antre bisa langsung Pre-Order atau titip Jastip teman ya!', 'Promo Kantin', 'KNT-01', '["SIS001","SIS002"]');
+  insPost.run('PST-02', 'SIS001', 'Budi Santoso (XII IPA 1)', 'Siswa', 'Istirahat pertama nanti aku mau ke Kantin Bu Siti sama Kedai Pak Budi nih. Yang di lantai 2 mau titip jajan geser aja, uang jajan seikhlasnya 5rb-10rb!', 'Info Jastip', 'KNT-01', '["SIS002"]');
+}
+
+// Ambil seluruh postingan & komentar
+app.get('/api/social/posts', (req, res) => {
+  const posts = db.prepare('SELECT * FROM social_posts ORDER BY created_at DESC LIMIT 50').all();
+  const comments = db.prepare('SELECT * FROM social_comments ORDER BY created_at ASC').all();
+  const result = posts.map(p => ({
+    ...p,
+    likes: JSON.parse(p.likes_json || '[]'),
+    comments: comments.filter(c => c.post_id === p.id)
+  }));
+  res.json(result);
+});
+
+// Buat postingan baru
+app.post('/api/social/posts', (req, res) => {
+  const { authorId, authorName, authorRole, content, tag, canteenId } = req.body;
+  if (!authorId || !content || !content.trim()) {
+    return res.status(400).json({ error: 'Isi status tidak boleh kosong!' });
+  }
+  const id = 'PST-' + Date.now().toString().slice(-6);
+  db.prepare(`
+    INSERT INTO social_posts (id, author_id, author_name, author_role, content, tag, canteen_id, likes_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, '[]')
+  `).run(id, authorId, authorName || authorId, authorRole || 'Siswa', content.trim(), tag || 'Status', canteenId || null);
+  res.json({ message: 'Status berhasil dipublikasikan ke Beranda Sosial!' });
+});
+
+// Toggle Suka (Like)
+app.post('/api/social/posts/:postId/like', (req, res) => {
+  const { postId } = req.params;
+  const { userId } = req.body;
+  const post = db.prepare('SELECT * FROM social_posts WHERE id = ?').get(postId);
+  if (!post) return res.status(404).json({ error: 'Postingan tidak ditemukan!' });
+
+  let likes = JSON.parse(post.likes_json || '[]');
+  if (likes.includes(userId)) {
+    likes = likes.filter(id => id !== userId);
+  } else {
+    likes.push(userId);
+  }
+  db.prepare('UPDATE social_posts SET likes_json = ? WHERE id = ?').run(JSON.stringify(likes), postId);
+  res.json({ likes });
+});
+
+// Tambah Komentar
+app.post('/api/social/posts/:postId/comments', (req, res) => {
+  const { postId } = req.params;
+  const { authorId, authorName, commentText } = req.body;
+  if (!commentText || !commentText.trim()) return res.status(400).json({ error: 'Komentar kosong!' });
+
+  const id = 'CMT-' + Date.now().toString().slice(-6);
+  db.prepare(`
+    INSERT INTO social_comments (id, post_id, author_id, author_name, comment_text)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(id, postId, authorId, authorName || authorId, commentText.trim());
+  res.json({ message: 'Komentar terkirim!' });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`🛡️ myKantin Hardened Server berjalan di http://localhost:${PORT}`);

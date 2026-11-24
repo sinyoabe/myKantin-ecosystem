@@ -83,7 +83,16 @@
             grid-column: span 12 / span 12 !important;
             height: 100% !important;
         }
-    </style>
+    
+  
+  /* Sembunyikan permanen banner biru Wall Feed & banner oranye GoFood di tengah */
+  body.mk-has-sidebar [onclick*="openEcosystemHub"],
+  body.mk-has-sidebar [onclick*="SocialWall"],
+  body.mk-has-sidebar [onclick*="socialWall"],
+  body.mk-has-sidebar .mk-banner-hidden-forever {
+    display: none !important;
+  }
+</style>
 <style>
   @keyframes coretaxFloatTop {
     0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -143,6 +152,11 @@
                 <button onclick="closeDepositModal()" class="absolute right-4 top-4 w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
+              
+              
+<button type="button" onclick="toggleAccordion('loan')" class="px-3.5 py-1.5 rounded-full bg-rose-500/90 hover:bg-rose-500 text-white font-extrabold text-[11px] shadow-md border border-rose-300/40 flex items-center gap-1.5 transition cursor-pointer">
+  <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i> PINJAM / TRANSFER
+</button>
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-full bg-white/90 text-amber-600 flex items-center justify-center shadow-md font-extrabold text-xl border-2 border-amber-300">🪙</div>
                     <div>
@@ -160,7 +174,7 @@
                             <i data-lucide="qr-code" class="w-4 h-4 text-indigo-600"></i> 1. Top-Up Otomatis via QRIS Dinamis
                         </p>
                         <div class="grid grid-cols-4 gap-1.5">
-                            <button type="button" onclick="document.getElementById('qrisDepositAmount').value=10000" class="py-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold">10rb</button>
+                            <button type="button" onclick="document.getElementById('qrisDepositAmount').value=10000" class="py-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold">10rb</button> 
                             <button type="button" onclick="document.getElementById('qrisDepositAmount').value=20000" class="py-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold">20rb</button>
                             <button type="button" onclick="document.getElementById('qrisDepositAmount').value=50000" class="py-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold">50rb</button>
                             <button type="button" onclick="document.getElementById('qrisDepositAmount').value=100000" class="py-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-600 hover:text-white font-extrabold">100rb</button>
@@ -661,7 +675,7 @@
                 <!-- QUICK TOGGLE STATUS JASTIP + TOOLTIP KETERANGAN (POJOK KANAN ATAS) -->
         <div id="navJastipWrapper" class="relative">
           <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl shadow-sm">
-            <span id="navJastipLabel" class="text-[11px] font-extrabold text-slate-600 hidden md:inline">Siap Jastip</span>
+            <span id="navJastipLabel" onclick="toggleTopJastipPopover()" class="text-[11px] font-extrabold text-slate-600 hidden md:inline cursor-pointer">Siap Jastip</span>
             <label class="relative inline-flex items-center cursor-pointer" title="Geser untuk aktifkan/nonaktifkan Mode Jastip">
               <input type="checkbox" id="topJastipToggle" onchange="handleTopJastipToggle(this.checked)" class="sr-only peer">
               <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
@@ -877,7 +891,7 @@
             </div>
             <div class="bg-white p-5 rounded-2xl border shadow-sm">
                 <h3 class="font-bold text-base mb-4 flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-slate-700"></i> Riwayat Struk Transaksi Terbaru</h3>
-                <div id="kasirTxList" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+                <div id="kasirTxList" class="grid grid-cols-1 gap-4"></div>
             </div>
 
             <div class="bg-white p-5 rounded-2xl border shadow-sm">
@@ -906,6 +920,9 @@
                             <span class="w-5 h-5 rounded-full bg-amber-900/20 border border-amber-800/30 flex items-center justify-center text-[11px]">🪙</span>
                             <span class="tracking-wide uppercase">Deposit</span>
                         </button>
+              <button type="button" onclick="(function(){   const box = document.getElementById('p2pSimulasiBox');   if (!box) return;   if (box.dataset.opened === '1' && box.style.display !== 'none') {     box.style.display = 'none';     box.dataset.opened = '0';     return;   }   const preorderBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Pre-Order Kantin'));   if (preorderBtn) {     const gridRow = preorderBtn.closest('.grid') || preorderBtn.parentElement;     if (gridRow && gridRow.parentElement) {       gridRow.parentElement.insertBefore(box, gridRow);     }   }   const closeBtn = Array.from(box.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Tutup'));   if (closeBtn && !closeBtn.dataset.boundClose) {     closeBtn.dataset.boundClose = '1';     closeBtn.addEventListener('click', function(){       box.style.display = 'none';       box.dataset.opened = '0';     });   }   box.classList.remove('hidden');   box.style.display = 'block';   box.style.width = '100%';   box.style.marginTop = '0px';   box.style.marginBottom = '16px';   box.dataset.opened = '1';   box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); })()" class="coin-btn px-3.5 py-1.5 rounded-full border-2 border-rose-200 text-white font-extrabold text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform cursor-pointer text-white font-extrabold" style="margin-left:6px; background:linear-gradient(135deg, #fb7185 0%, #f43f5e 50%, #e11d48 100%); border:1px solid rgba(255,228,230,0.65); box-shadow:0 4px 15px rgba(244,63,94,0.45), inset 0 1px 1px rgba(255,255,255,0.65); color:#ffffff;">
+                <span class="relative z-10 inline-flex items-center gap-1.5">⇄ PINJEM</span>
+              </button>
                     </div>
                     <p id="siswaInfo" class="text-sm text-slate-300"></p>
                     <div class="inline-flex flex-wrap gap-3 bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2 rounded-xl text-xs">
@@ -943,32 +960,30 @@
                 <i id="chevPreorder" data-lucide="chevron-down" class="w-4 h-4 chevron-icon opacity-90"></i>
             </button>
 
-            <button type="button" onclick="toggleAccordion('loan')" id="btnAccLoan" class="w-full p-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/20 transition-all duration-300 flex items-center justify-between text-left">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0"><i data-lucide="hand-coins" class="w-4 h-4"></i></div>
-                    <div><p class="font-extrabold text-sm">Pinjam & Pinjamkan</p><p class="text-[11px] text-rose-100">Transfer / minta saldo</p></div>
-                </div>
-                <i id="chevLoan" data-lucide="chevron-down" class="w-4 h-4 chevron-icon opacity-90"></i>
-            </button>
+            
 
-            <button type="button" onclick="toggleAccordion('chat')" id="btnAccChat" class="relative w-full p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20 transition-all duration-300 flex items-center justify-between text-left">
-                <div class="flex items-center gap-3">
-                    <div class="relative w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                        <i data-lucide="message-circle" class="w-4 h-4"></i>
-                        <span id="globalUnreadDot" class="hidden absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 ring-2 ring-slate-900 animate-ping"></span>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <p class="font-extrabold text-sm">Chat Teman & Kasir</p>
-                            <span id="globalUnreadBadge" class="hidden px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-red-500 text-white">0 Baru</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400">Personal, grup & tanya kasir</p>
-                    </div>
-                </div>
-                <i id="chevChat" data-lucide="chevron-down" class="w-4 h-4 chevron-icon opacity-90"></i>
-            </button>
+            
         </div>
     <!-- BANNER EKOSISTEM GOFOOD KANTIN & DOMPET UANG JAJAN JASTIP -->
+    <!-- TOMBOL BERANDA SOSIAL (FACEBOOK-STYLE WALL FEED) -->
+    <div class="mt-3">
+      <button type="button" onclick="openSocialWallModal()" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white rounded-2xl p-3.5 shadow-md shadow-blue-600/20 flex items-center justify-between text-left transition cursor-pointer">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+            <i data-lucide="newspaper" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-sm sm:text-base">Beranda Sosial Kantin (Wall Feed)</span>
+              <span class="px-2 py-0.5 rounded-full bg-white text-blue-700 text-[10px] font-black uppercase">Komunitas</span>
+            </div>
+            <p class="text-[11px] text-blue-100">Update status jajan, info promo kantin, saling komentar & langsung titip jastip!</p>
+          </div>
+        </div>
+        <span class="px-3 py-1.5 rounded-xl bg-white/15 text-xs font-bold shrink-0">Buka Feed →</span>
+      </button>
+    </div>
+
     <div class="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-3.5">
       <button type="button" onclick="openEcosystemHub('explore')" class="lg:col-span-7 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white rounded-2xl p-4 shadow-lg shadow-orange-500/20 flex items-center justify-between text-left transition transform hover:-translate-y-0.5 cursor-pointer">
         <div class="flex items-center gap-3.5">
@@ -1056,9 +1071,9 @@
         <!-- KONTEN ACCORDION 2: PINJAM & PINJAMKAN SALDO -->
         <div id="accLoanContent" class="accordion-content">
             <div class="accordion-inner">
-                <div class="bg-white p-5 sm:p-6 rounded-2xl border-2 border-rose-200 shadow-sm mt-1">
+                <div id="p2pSimulasiBox" class="bg-white p-5 sm:p-6 rounded-2xl border-2 border-rose-200 shadow-sm mt-1">
                     <div class="flex flex-wrap justify-between items-center gap-2 border-b pb-4 mb-5">
-                        <div class="flex flex-wrap gap-2">
+                        <div id="boxSimulasiPinjamTeman" class="flex flex-wrap gap-2">
                             <button onclick="switchLoanActionTab('lend')" id="btnTabLend" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-600 text-white shadow flex items-center gap-2 transition"><i data-lucide="send" class="w-4 h-4"></i> Pinjamkan Saldo ke Teman</button>
                             <button onclick="switchLoanActionTab('request')" id="btnTabRequest" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-2 transition"><i data-lucide="hand-coins" class="w-4 h-4"></i> Minta Pinjaman ke Teman</button>
                         </div>
@@ -1127,7 +1142,7 @@
         <!-- KONTEN ACCORDION 3: CHAT ANTAR SISWA & KASIR -->
         <div id="accChatContent" class="accordion-content">
             <div class="accordion-inner">
-                <div id="chatWindowBox" class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm mt-1 overflow-hidden">
+                <div id="chatWindowBox" class="hidden bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden mb-6">
                     <div class="bg-slate-900 text-white px-4 py-3 flex justify-between items-center">
                         <div class="flex items-center gap-2 min-w-0">
                             <i data-lucide="message-circle" class="w-5 h-5 text-emerald-400 shrink-0"></i>
@@ -1654,7 +1669,14 @@
             }).length;
         }
 
-        function updateUnreadBadges() {
+        
+function updateUnreadBadges(data) {
+  try {
+    if (typeof updateUnreadBadges_orig === 'function') updateUnreadBadges_orig(data);
+  } catch (e) {}
+}
+
+function updateUnreadBadges_orig() {
             if (!session) return;
             if (session.role === 'kasir') {
                 let kasirUnread = 0;
@@ -3866,51 +3888,1564 @@ setInterval(() => {
 </script>
 
 <!-- FLOATING TOOLTIP / POPOVER KETERANGAN TOGGLE JASTIP (FIXED DI ATAS DASBOR) -->
-<div id="topJastipPopover" class="hidden fixed top-16 right-4 sm:right-10 w-[340px] sm:w-[370px] rounded-3xl shadow-2xl shadow-slate-900/30 border border-emerald-500/30 overflow-hidden z-[9999] text-left transition-all">
-  <!-- Bagian Atas: Kartu Hijau Gelap Ringkas (Ala Banner Jastip) -->
-  <div class="bg-gradient-to-br from-emerald-950 via-teal-900 to-slate-900 text-white p-4 space-y-3">
+<div id="topJastipPopover" style="display:none;" class="fixed top-16 right-4 sm:right-8 w-[360px] sm:w-[440px] max-h-[82vh] flex flex-col rounded-3xl shadow-2xl shadow-slate-900/30 border border-emerald-500/30 bg-slate-50 overflow-hidden z-[9999] text-left">
+  <!-- Header & Form Ringkas Status Runner -->
+  <div class="bg-gradient-to-br from-emerald-950 via-teal-900 to-slate-900 text-white p-4 space-y-2.5 shrink-0">
     <div class="flex items-start justify-between gap-2">
       <div>
-        <span id="topJastipBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold">
-          <span id="topJastipDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Mode Jastip Sosial
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold">
+          <span id="topJastipDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Feed Jastip Sosial
         </span>
-        <h4 id="topJastipTitle" class="text-sm font-black mt-1.5 leading-snug">Status Siap Jastip Aktif!</h4>
-        <p id="topJastipDesc" class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-          Pilih lokasi kantin & tulis status agar teman bisa menitip (Uang Jajan Rp 5rb–20rb).
-        </p>
+        <h4 id="topJastipTitle" class="text-sm font-black mt-1">Mode Siap Jastip AKTIF!</h4>
+        <p id="topJastipDesc" class="text-[11px] text-slate-300">Atur lokasi kantin Anda atau titip jajan ke teman yang sedang di kantin:</p>
       </div>
       <button type="button" onclick="document.getElementById('topJastipPopover').classList.add('hidden')" class="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center shrink-0 cursor-pointer">
         <i data-lucide="x" class="w-3.5 h-3.5"></i>
       </button>
     </div>
 
-    <!-- Form Ringkas Lokasi & Status Medsos -->
-    <div id="topJastipFormFields" class="bg-black/25 border border-white/10 rounded-2xl p-3 space-y-2">
-      <select id="topJastipCanteenSelect" onchange="saveTopJastipDetails()" class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-white font-semibold outline-none">
-        <option value="KNT-01">Lokasi: Kantin Bu Siti - Blok A</option>
-      </select>
-      <input type="text" id="topJastipNoteInput" placeholder="Status medsos: Lagi di kantin nih, mau nitip apa?" class="w-full px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-white placeholder-slate-400 outline-none">
-      <div class="flex items-center justify-between pt-1">
-        <button type="button" onclick="openEcosystemHub('social'); document.getElementById('topJastipPopover').classList.add('hidden');" class="text-[11px] font-bold text-amber-300 hover:underline cursor-pointer">
-          Buka Feed & Misi →
+    <!-- Form Lokasi & Catatan Status -->
+    <div id="topJastipFormFields" class="bg-black/25 border border-white/10 rounded-2xl p-2.5 space-y-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+        <select id="topJastipCanteenSelect" onchange="saveTopJastipDetails()" class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-[11px] text-white font-semibold outline-none"></select>
+        <input type="text" id="topJastipNoteInput" placeholder="Status: Lagi di kantin nih!" class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-[11px] text-white placeholder-slate-400 outline-none">
+      </div>
+      <div class="flex items-center justify-between">
+        <button type="button" onclick="openEcosystemHub('social'); document.getElementById('topJastipPopover').classList.add('hidden');" class="text-[10px] font-bold text-amber-300 hover:underline cursor-pointer">
+          Buka Layar Penuh ↗
         </button>
-        <button type="button" onclick="saveTopJastipDetails(true)" class="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow transition cursor-pointer">
-          Simpan Status
+        <button type="button" onclick="saveTopJastipDetails(false)" class="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-[11px] shadow transition cursor-pointer">
+          Update Status
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Bagian Bawah: Mini Ringkasan Feed & Misi Masuk -->
-  <div class="bg-white px-4 py-3 flex items-center justify-between text-[11px] text-slate-600 border-t border-slate-100">
-    <span id="miniPopoverFeedCount" class="font-bold text-slate-700 flex items-center gap-1.5">
-      <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-600"></i> 0 Teman di Kantin
-    </span>
-    <span id="miniPopoverOrderCount" class="font-bold text-orange-600 flex items-center gap-1.5">
-      <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> 0 Misi Jastip
-    </span>
+  <!-- Body Dinamis Scrollable: Feed Teman di Kantin & Misi Jastip Masuk -->
+  <div class="p-3.5 overflow-y-auto space-y-3 flex-1">
+    <div>
+      <div class="flex items-center justify-between mb-1.5">
+        <p class="text-[11px] font-extrabold text-slate-700 flex items-center gap-1.5">
+          <i data-lucide="users" class="w-3.5 h-3.5 text-emerald-600"></i> Siswa Siap Jastip di Kantin
+        </p>
+        <span id="miniPopoverFeedCount" class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">0 Aktif</span>
+      </div>
+      <div id="miniPopoverRunnersList" class="space-y-2"></div>
+    </div>
+
+    <div class="border-t border-slate-200/80 pt-2.5">
+      <div class="flex items-center justify-between mb-1.5">
+        <p class="text-[11px] font-extrabold text-slate-700 flex items-center gap-1.5">
+          <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-orange-500"></i> Misi Jastip & Pesanan Aktif
+        </p>
+        <span id="miniPopoverOrderCount" class="text-[10px] font-bold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full">0 Misi</span>
+      </div>
+      <div id="miniPopoverOrdersList" class="space-y-2"></div>
+    </div>
   </div>
 </div>
+
+
+<script>
+</script>
+
+
+<script>
+// ================= CONTROLLER DEFINITIF MINI FEED JASTIP POJOK KANAN ATAS =================
+function setTopPopoverVisible(show) {
+  const pop = document.getElementById('topJastipPopover');
+  if (!pop) return;
+  pop.classList.remove('hidden');
+  pop.style.display = show ? 'flex' : 'none';
+  if (show && window.lucide) lucide.createIcons();
+}
+
+function toggleTopJastipPopover() {
+  const pop = document.getElementById('topJastipPopover');
+  if (!pop) return;
+  const isCurrentlyVisible = pop.style.display === 'flex';
+  setTopPopoverVisible(!isCurrentlyVisible);
+}
+
+async function handleTopJastipToggle(isChecked) {
+  const sid = getLoggedStudentId();
+  if (!sid) {
+    const t = document.getElementById('topJastipToggle');
+    if (t) t.checked = false;
+    return alert('Fitur Toggle Jastip khusus untuk akun siswa.');
+  }
+
+  const titleEl = document.getElementById('topJastipTitle');
+  const descEl = document.getElementById('topJastipDesc');
+  const dotEl = document.getElementById('topJastipDot');
+  const fieldsEl = document.getElementById('topJastipFormFields');
+
+  if (isChecked) {
+    if (titleEl) titleEl.textContent = 'Mode Siap Jastip AKTIF!';
+    if (descEl) descEl.textContent = 'Atur lokasi kantin Anda atau titip jajan ke teman yang sedang di kantin:';
+    if (dotEl) dotEl.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+    if (fieldsEl) fieldsEl.style.display = 'block';
+  } else {
+    if (titleEl) titleEl.textContent = 'Mode Siap Jastip NONAKTIF';
+    if (descEl) descEl.textContent = 'Status kurir dimatikan. Anda tetap bisa melihat teman yang sedang di kantin di bawah ini:';
+    if (dotEl) dotEl.className = 'w-1.5 h-1.5 rounded-full bg-slate-400';
+    if (fieldsEl) fieldsEl.style.display = 'none';
+  }
+
+  // Langsung munculkan panel Mini Feed Jastip Sosial seketika!
+  setTopPopoverVisible(true);
+
+  const canteenSel = document.getElementById('topJastipCanteenSelect');
+  const noteInput = document.getElementById('topJastipNoteInput');
+  const canteenId = (canteenSel && canteenSel.value) ? canteenSel.value : (ecoState.myRunnerStatus.canteen_id || 'KNT-01');
+  const note = (noteInput && noteInput.value) ? noteInput.value : (ecoState.myRunnerStatus.note || 'Siap bantu titip jajan!');
+
+  try {
+    await fetch('/api/jastip/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId: sid, isActive: isChecked, canteenId, note })
+    });
+    await loadEcosystemData();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function saveTopJastipDetails(closeAfter = false) {
+  const sid = getLoggedStudentId();
+  if (!sid) return;
+  const isChecked = document.getElementById('topJastipToggle')?.checked ?? true;
+  const canteenId = document.getElementById('topJastipCanteenSelect')?.value || 'KNT-01';
+  const note = document.getElementById('topJastipNoteInput')?.value || '';
+
+  await fetch('/api/jastip/toggle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ studentId: sid, isActive: isChecked, canteenId, note })
+  });
+  await loadEcosystemData();
+  if (closeAfter) setTopPopoverVisible(false);
+}
+
+// Perbaiki tombol X di dalam #topJastipPopover agar menutup lewat setTopPopoverVisible(false)
+document.addEventListener('DOMContentLoaded', () => {
+  const pop = document.getElementById('topJastipPopover');
+  if (pop) {
+    const closeBtn = pop.querySelector('button');
+    if (closeBtn) closeBtn.setAttribute('onclick', 'setTopPopoverVisible(false)');
+  }
+});
+
+// Hook ke renderEcosystemUI agar isi Mini Feed selalu sinkron secara dinamis
+const _baseRenderEco = renderEcosystemUI;
+renderEcosystemUI = function() {
+  _baseRenderEco();
+  const sid = getLoggedStudentId();
+  const wrap = document.getElementById('navJastipWrapper');
+  if (wrap) wrap.classList.toggle('hidden', !sid);
+
+  const topToggle = document.getElementById('topJastipToggle');
+  const topLabel = document.getElementById('navJastipLabel');
+  if (topToggle) topToggle.checked = Boolean(ecoState.myRunnerStatus.is_active);
+  if (topLabel) {
+    topLabel.textContent = ecoState.myRunnerStatus.is_active ? 'Siap Jastip (ON)' : 'Siap Jastip';
+    topLabel.className = ecoState.myRunnerStatus.is_active
+      ? 'text-[11px] font-extrabold text-emerald-700 hidden md:inline cursor-pointer'
+      : 'text-[11px] font-extrabold text-slate-500 hidden md:inline cursor-pointer';
+  }
+
+  const topSel = document.getElementById('topJastipCanteenSelect');
+  if (topSel && !topSel.matches(':focus')) {
+    const prev = topSel.value;
+    topSel.innerHTML = ecoState.canteens.map(c => `<option value="${c.id}">📍 ${c.name}</option>`).join('');
+    if (ecoState.myRunnerStatus.canteen_id) topSel.value = ecoState.myRunnerStatus.canteen_id;
+    else if (prev) topSel.value = prev;
+  }
+  const topNote = document.getElementById('topJastipNoteInput');
+  if (topNote && !topNote.matches(':focus') && ecoState.myRunnerStatus.note) {
+    topNote.value = ecoState.myRunnerStatus.note;
+  }
+
+  const miniFeed = document.getElementById('miniPopoverFeedCount');
+  const miniOrder = document.getElementById('miniPopoverOrderCount');
+  if (miniFeed) miniFeed.textContent = `${ecoState.runners.length} Aktif`;
+  if (miniOrder) {
+    const activeOrders = ecoState.orders.filter(o => o.status !== 'SELESAI');
+    miniOrder.textContent = `${activeOrders.length} Misi`;
+  }
+
+  const miniRunnersEl = document.getElementById('miniPopoverRunnersList');
+  if (miniRunnersEl) {
+    if (ecoState.runners.length === 0) {
+      miniRunnersEl.innerHTML = `<p class="text-[11px] text-slate-400 bg-white border border-slate-200 rounded-xl p-3 text-center">Belum ada teman aktif di kantin.</p>`;
+    } else {
+      miniRunnersEl.innerHTML = ecoState.runners.map(r => `
+        <div class="bg-white border border-emerald-200/80 rounded-2xl p-2.5 shadow-sm flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-xs font-extrabold text-slate-800 truncate">${r.student_name} <span class="font-normal text-slate-400">• ${r.class_name}</span></p>
+            <p class="text-[10px] font-bold text-emerald-700 truncate">📍 ${r.canteen_name}</p>
+            <p class="text-[10px] text-slate-500 italic truncate">"${r.note || 'Siap bantu titip!'}"</p>
+          </div>
+          <button type="button" onclick="setTopPopoverVisible(false); openEcosystemHub('explore'); titipKeRunner('${r.canteen_id}', '${r.student_id}');" class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-[10px] shrink-0 cursor-pointer">
+            Titip →
+          </button>
+        </div>
+      `).join('');
+    }
+  }
+
+  const miniOrdersEl = document.getElementById('miniPopoverOrdersList');
+  if (miniOrdersEl) {
+    const activeOrders = ecoState.orders.filter(o => o.status !== 'SELESAI');
+    if (activeOrders.length === 0) {
+      miniOrdersEl.innerHTML = `<p class="text-[11px] text-slate-400 bg-white border border-slate-200 rounded-xl p-3 text-center">Belum ada misi jastip berjalan.</p>`;
+    } else {
+      miniOrdersEl.innerHTML = activeOrders.map(o => {
+        const items = JSON.parse(o.items_json || '[]');
+        const summary = items.map(i => `${i.name} (${i.qty}x)`).join(', ');
+        const canAccept = o.status === 'MENUNGGU_RUNNER' && o.orderer_id !== sid && ecoState.myRunnerStatus.is_active;
+        const isMyJob = o.runner_id === sid;
+        const isMyOrder = o.orderer_id === sid;
+        return `
+          <div class="bg-white border border-slate-200 rounded-2xl p-2.5 shadow-sm space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-[11px] font-extrabold text-slate-800 truncate">${o.orderer_name} → ${o.canteen_name}</p>
+              <span class="text-[10px] font-black text-emerald-700 shrink-0">+Rp ${(o.tip_amount || 0).toLocaleString('id-ID')}</span>
+            </div>
+            <p class="text-[10px] text-slate-600 truncate">${summary}</p>
+            <div class="flex items-center justify-between gap-1 pt-0.5">
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">${o.status.replace(/_/g, ' ')}</span>
+              <div class="flex gap-1">
+                ${canAccept ? `<button type="button" onclick="handleJastipOrderAction('${o.id}', 'ACCEPT')" class="px-2 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] cursor-pointer">Ambil</button>` : ''}
+                ${(isMyJob || isMyOrder) ? `<button type="button" onclick="handleJastipOrderAction('${o.id}', 'COMPLETE')" class="px-2 py-1 rounded-lg bg-slate-900 text-white font-bold text-[10px] cursor-pointer">Selesai ✓</button>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+  if (window.lucide) lucide.createIcons();
+};
+</script>
+
+
+<!-- ================= MODAL BERANDA SOSIAL (FACEBOOK-STYLE FEED) ================= -->
+<div id="socialWallModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+  <div class="bg-[#f0f2f5] w-full max-w-4xl rounded-3xl shadow-2xl border border-white overflow-hidden flex flex-col max-h-[92vh]">
+    
+    <!-- Header Ala Facebook -->
+    <div class="bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white px-5 py-3.5 flex items-center justify-between shrink-0 shadow">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-white text-blue-700 font-black text-lg flex items-center justify-center shadow">
+          f
+        </div>
+        <div>
+          <h2 class="font-extrabold text-base tracking-tight">myKantin Social Wall</h2>
+          <p class="text-[11px] text-blue-100">Beranda status siswa, info open jastip & promo stan kantin</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 bg-black/20 p-1 rounded-2xl">
+        <button type="button" id="swTabFeedBtn" onclick="switchSocialWallTab('feed')" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-white text-blue-700 shadow transition cursor-pointer">
+          📰 Beranda Feed
+        </button>
+        <button type="button" id="swTabMsgBtn" onclick="switchSocialWallTab('messenger')" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold text-blue-100 hover:text-white transition cursor-pointer flex items-center gap-1.5">
+          💬 Messenger <span class="px-1.5 py-0.2 rounded-full bg-sky-400/30 text-[9px]">Private</span>
+        </button>
+        <button type="button" onclick="document.getElementById('socialWallModal').classList.add('hidden')" class="ml-1 w-8 h-8 rounded-xl bg-white/15 hover:bg-rose-500 text-white flex items-center justify-center transition cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Konten Utama 2 Kolom (Feed Kiri + Info Komunitas Kanan) -->
+    <div id="swPanelFeed" class="p-4 sm:p-5 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5">
+      
+      <!-- Kolom Kiri (8 kolom): Buat Status & Daftar Postingan -->
+      <div class="lg:col-span-8 space-y-4">
+        <!-- Kotak "Apa yang sedang kamu pikirkan / jajankan?" -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+          <div class="flex items-start gap-3">
+            <div id="socialComposerAvatar" class="w-10 h-10 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+              MK
+            </div>
+            <textarea id="socialPostInput" rows="2" placeholder="Apa yang lagi kamu jajankan hari ini? Tulis info open jastip, review menu kantin, atau ajak teman makan bareng..." class="w-full bg-slate-100 hover:bg-slate-200/70 focus:bg-white rounded-2xl px-4 py-2.5 text-xs text-slate-800 border border-transparent focus:border-blue-500 outline-none resize-none transition"></textarea>
+          </div>
+          
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="socialPostTag" class="px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 font-bold text-[11px] border border-blue-200 outline-none">
+                <option value="Status">💬 Update Status</option>
+                <option value="Info Jastip">🛵 Open Jastip</option>
+                <option value="Review Menu">⭐ Review Makanan</option>
+                <option value="Promo Kantin">🔥 Info Promo Kantin</option>
+              </select>
+              <select id="socialPostCanteen" class="px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200 outline-none">
+                <option value="">📍 Tanpa Lokasi Kantin</option>
+              </select>
+            </div>
+            <button type="button" onclick="submitSocialPost()" class="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-sm transition cursor-pointer">
+              Posting
+            </button>
+          </div>
+        </div>
+
+        <!-- Daftar Postingan Feed -->
+        <div id="socialPostsFeedList" class="space-y-4"></div>
+      </div>
+
+      <!-- Kolom Kanan (4 kolom): Sidebar Pintasan & Teman Aktif -->
+      <div class="lg:col-span-4 space-y-4">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-2.5">
+          <h4 class="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Pintasan Cepat</h4>
+          <button type="button" onclick="document.getElementById('socialWallModal').classList.add('hidden'); openEcosystemHub('explore');" class="w-full py-2 px-3 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-xs text-left flex items-center justify-between cursor-pointer">
+            <span>🍔 Pesan Kantin (GoFood)</span><span>→</span>
+          </button>
+          <button type="button" onclick="document.getElementById('socialWallModal').classList.add('hidden'); openEcosystemHub('social');" class="w-full py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs text-left flex items-center justify-between cursor-pointer">
+            <span>🛵 Misi & Toggle Jastip</span><span>→</span>
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-2.5">
+          <h4 class="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Teman Sedang di Kantin</h4>
+          <div id="socialSidebarRunners" class="space-y-2 text-xs text-slate-500">Memuat...</div>
+        </div>
+      </div>
+
+    </div>
+    <!-- PANEL MESSENGER PRIVATE & GRUP DI DALAM SOCIAL WALL -->
+    <div id="swPanelMessenger" class="hidden flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-12 bg-white">
+      <!-- Daftar Kontak & Grup (Kiri - 4 kolom) -->
+      <div class="md:col-span-4 border-r border-slate-200 flex flex-col bg-slate-50/70 overflow-hidden">
+        <div class="p-3.5 border-b border-slate-200 flex items-center justify-between bg-white">
+          <div>
+            <h3 class="font-extrabold text-slate-800 text-sm">Obrolan Pribadi & Grup</h3>
+            <p class="text-[10px] text-slate-400">Pesan terenkripsi antar siswa & kasir</p>
+          </div>
+          <button type="button" onclick="createSwChatGroup()" class="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] cursor-pointer">
+            + Grup
+          </button>
+        </div>
+        <div class="p-2.5">
+          <input type="text" id="swMsgSearch" oninput="renderSwContacts()" placeholder="Cari nama teman atau kasir..." class="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs outline-none focus:border-blue-500">
+        </div>
+        <div id="swContactsList" class="flex-1 overflow-y-auto px-2.5 pb-3 space-y-1"></div>
+      </div>
+
+      <!-- Ruang Obrolan Aktif (Kanan - 8 kolom) -->
+      <div class="md:col-span-8 flex flex-col bg-[#efeae2]/40 overflow-hidden">
+        <div id="swChatHeader" class="px-4 py-3 bg-white border-b border-slate-200 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div id="swActiveAvatar" class="w-9 h-9 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center">KS</div>
+            <div>
+              <p id="swActiveName" class="text-xs font-extrabold text-slate-800">Kasir myKantin</p>
+              <p id="swActiveSub" class="text-[10px] text-emerald-600 font-semibold">● Online • Layanan Kantin</p>
+            </div>
+          </div>
+          <button type="button" onclick="clearSwChatHistory()" class="text-[11px] font-bold text-rose-500 hover:underline cursor-pointer">Bersihkan Chat</button>
+        </div>
+
+        <div id="swMessagesBox" class="flex-1 overflow-y-auto p-4 space-y-2.5 text-xs">
+          <p class="text-center text-slate-400 py-10">Pilih teman, grup, atau kasir di sebelah kiri untuk mulai berkirim pesan pribadi.</p>
+        </div>
+
+        <form onsubmit="sendSwDirectMessage(event)" class="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
+          <input type="text" id="swMessageInput" placeholder="Ketik pesan pribadi..." class="flex-1 px-4 py-2.5 rounded-full bg-slate-100 focus:bg-white border border-transparent focus:border-blue-500 text-xs outline-none">
+          <button type="submit" class="px-4 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow cursor-pointer flex items-center gap-1.5">
+            <span>Kirim</span> <i data-lucide="send" class="w-3.5 h-3.5"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================= LOGIKA BERANDA SOSIAL (FACEBOOK-STYLE WALL) =================
+function getCurrentSocialUser() {
+  const nameEl = document.getElementById('navUserName');
+  const subEl = document.getElementById('navUserSub');
+  const name = nameEl ? nameEl.textContent.trim() : 'Warga Sekolah';
+  const sub = subEl ? subEl.textContent.trim() : '';
+  const sidMatch = sub.match(/(SIS\d+)/i);
+  const id = sidMatch ? sidMatch[1].toUpperCase() : 'KASIR01';
+  const role = sidMatch ? 'Siswa' : 'Kasir / Mitra';
+  return { id, name, role };
+}
+
+let swChatState = {
+  contacts: [],
+  groups: [],
+  messages: [],
+  activeTargetId: 'KASIR01',
+  activeTargetType: 'direct', // 'direct' | 'group'
+  activeTargetName: 'Kasir myKantin',
+  activeTargetSub: 'Layanan & Konfirmasi Kantin'
+};
+
+function switchSocialWallTab(tab) {
+  const feedPanel = document.getElementById('swPanelFeed');
+  const msgPanel = document.getElementById('swPanelMessenger');
+  const feedBtn = document.getElementById('swTabFeedBtn');
+  const msgBtn = document.getElementById('swTabMsgBtn');
+
+  if (feedPanel) feedPanel.classList.toggle('hidden', tab !== 'feed');
+  if (msgPanel) msgPanel.classList.toggle('hidden', tab !== 'messenger');
+
+  if (feedBtn) {
+    feedBtn.className = tab === 'feed'
+      ? 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-white text-blue-700 shadow transition cursor-pointer'
+      : 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold text-blue-100 hover:text-white transition cursor-pointer';
+  }
+  if (msgBtn) {
+    msgBtn.className = tab === 'messenger'
+      ? 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-white text-blue-700 shadow transition cursor-pointer flex items-center gap-1.5'
+      : 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold text-blue-100 hover:text-white transition cursor-pointer flex items-center gap-1.5';
+  }
+  if (tab === 'messenger') loadSwMessengerData();
+  if (window.lucide) lucide.createIcons();
+}
+
+async function openSocialWallModal(initialTab = 'feed') {
+  document.getElementById('socialWallModal').classList.remove('hidden');
+  switchSocialWallTab(initialTab);
+  const user = getCurrentSocialUser();
+  const av = document.getElementById('socialComposerAvatar');
+  if (av) av.textContent = user.name.slice(0, 2).toUpperCase();
+
+  // Isi pilihan lokasi kantin dari ecoState
+  const sel = document.getElementById('socialPostCanteen');
+  if (sel && ecoState.canteens.length > 0) {
+    sel.innerHTML = `<option value="">📍 Tanpa Lokasi Kantin</option>` +
+      ecoState.canteens.map(c => `<option value="${c.id}">📍 ${c.name}</option>`).join('');
+  }
+
+  await loadSocialPosts();
+  if (window.lucide) lucide.createIcons();
+}
+
+async function loadSocialPosts() {
+  try {
+    const res = await fetch('/api/social/posts');
+    const posts = await res.json();
+    const user = getCurrentSocialUser();
+    const listEl = document.getElementById('socialPostsFeedList');
+    if (!listEl) return;
+
+    listEl.innerHTML = posts.map(p => {
+      const isLiked = (p.likes || []).includes(user.id);
+      const canteen = ecoState.canteens.find(c => c.id === p.canteen_id);
+      const tagColors = {
+        'Info Jastip': 'bg-emerald-100 text-emerald-800',
+        'Promo Kantin': 'bg-amber-100 text-amber-800',
+        'Review Menu': 'bg-purple-100 text-purple-800',
+        'Status': 'bg-blue-100 text-blue-800'
+      };
+      const badgeCls = tagColors[p.tag] || 'bg-slate-100 text-slate-700';
+
+      return `
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+          <!-- Header Post -->
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-black text-xs flex items-center justify-center shrink-0">
+                ${(p.author_name || 'U').slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <p class="text-xs font-extrabold text-slate-900">${p.author_name}</p>
+                <p class="text-[10px] text-slate-400">${p.author_role} • ${p.created_at || 'Baru saja'} ${canteen ? `• <span class="text-emerald-700 font-bold">📍 ${canteen.name}</span>` : ''}</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${badgeCls}">${p.tag}</span>
+          </div>
+
+          <!-- Isi Status -->
+          <p class="text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-line">${p.content}</p>
+
+          <!-- Tombol Aksi Cepat jika berkaitan dengan Kantin / Jastip -->
+          ${canteen ? `
+            <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 flex items-center justify-between gap-2">
+              <span class="text-[11px] font-bold text-slate-700">🏪 ${canteen.name} (${canteen.location})</span>
+              <button type="button" onclick="document.getElementById('socialWallModal').classList.add('hidden'); openEcosystemHub('explore'); openCanteenStorefront('${canteen.id}');" class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-[10px] cursor-pointer">
+                Pesan / Titip di Sini →
+              </button>
+            </div>
+          ` : ''}
+
+          <!-- Statistik Like & Komentar -->
+          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+            <span>👍 ${(p.likes || []).length} Suka</span>
+            <span>${(p.comments || []).length} Komentar</span>
+          </div>
+
+          <!-- Tombol Like & Fokus Komentar -->
+          <div class="grid grid-cols-2 gap-2 border-y border-slate-100 py-1">
+            <button type="button" onclick="toggleSocialLike('${p.id}')" class="py-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer ${isLiked ? 'bg-blue-50 text-blue-600' : 'hover:bg-slate-100 text-slate-600'}">
+              <span>${isLiked ? '👍 Disukai' : '👍 Suka'}</span>
+            </button>
+            <button type="button" onclick="document.getElementById('cmtInput_${p.id}').focus()" class="py-1.5 rounded-xl hover:bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer">
+              <span>💬 Komentari</span>
+            </button>
+            ${p.author_id !== user.id ? `
+              <button type="button" onclick="openPrivateChatWith('${p.author_id}', '${(p.author_name || '').replace(/'/g, '')}')" class="col-span-2 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-extrabold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer">
+                <span>✉️ Kirim Pesan Pribadi (Messenger) ke ${p.author_name}</span>
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- Daftar Komentar -->
+          <div class="space-y-2">
+            ${(p.comments || []).map(c => `
+              <div class="bg-slate-100 rounded-2xl px-3 py-2 text-xs">
+                <span class="font-extrabold text-slate-800">${c.author_name}: </span>
+                <span class="text-slate-700">${c.comment_text}</span>
+              </div>
+            `).join('')}
+
+            <!-- Input Komentar Baru -->
+            <form onsubmit="submitSocialComment(event, '${p.id}')" class="flex items-center gap-2 pt-1">
+              <input type="text" id="cmtInput_${p.id}" placeholder="Tulis komentar..." class="flex-1 bg-slate-100 focus:bg-white border border-transparent focus:border-blue-400 rounded-full px-3.5 py-1.5 text-xs outline-none">
+              <button type="submit" class="px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] cursor-pointer">Kirim</button>
+            </form>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Render sidebar teman aktif di kantin
+    const sideEl = document.getElementById('socialSidebarRunners');
+    if (sideEl) {
+      if (ecoState.runners.length === 0) {
+        sideEl.innerHTML = `<p class="text-[11px] text-slate-400">Belum ada teman yang buka jastip.</p>`;
+      } else {
+        sideEl.innerHTML = ecoState.runners.map(r => `
+          <div class="flex items-center justify-between gap-2 bg-emerald-50/70 border border-emerald-200 rounded-xl p-2">
+            <div class="min-w-0">
+              <p class="font-bold text-slate-800 truncate">${r.student_name}</p>
+              <p class="text-[10px] text-emerald-700 truncate">📍 ${r.canteen_name}</p>
+            </div>
+            <button type="button" onclick="document.getElementById('socialWallModal').classList.add('hidden'); openEcosystemHub('explore'); titipKeRunner('${r.canteen_id}', '${r.student_id}');" class="px-2 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] shrink-0 cursor-pointer">Titip</button>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (err) {
+    console.error('Gagal memuat Beranda Sosial:', err);
+  }
+}
+
+async function submitSocialPost() {
+  const user = getCurrentSocialUser();
+  const content = document.getElementById('socialPostInput').value;
+  const tag = document.getElementById('socialPostTag').value;
+  const canteenId = document.getElementById('socialPostCanteen').value;
+  if (!content.trim()) return alert('Tulis sesuatu dulu sebelum memposting!');
+
+  const res = await fetch('/api/social/posts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      authorId: user.id,
+      authorName: user.name,
+      authorRole: user.role,
+      content,
+      tag,
+      canteenId
+    })
+  });
+  if (res.ok) {
+    document.getElementById('socialPostInput').value = '';
+    await loadSocialPosts();
+  }
+}
+
+async function toggleSocialLike(postId) {
+  const user = getCurrentSocialUser();
+  await fetch(`/api/social/posts/${postId}/like`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: user.id })
+  });
+  await loadSocialPosts();
+}
+
+async function submitSocialComment(e, postId) {
+  e.preventDefault();
+  const user = getCurrentSocialUser();
+  const input = document.getElementById('cmtInput_' + postId);
+  if (!input || !input.value.trim()) return;
+
+  await fetch(`/api/social/posts/${postId}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      authorId: user.id,
+      authorName: user.name,
+      commentText: input.value
+    })
+  });
+  input.value = '';
+  await loadSocialPosts();
+}
+
+function openPrivateChatWith(targetId, targetName) {
+  swChatState.activeTargetId = targetId;
+  swChatState.activeTargetType = 'direct';
+  swChatState.activeTargetName = targetName || targetId;
+  swChatState.activeTargetSub = 'Obrolan Pribadi • ' + targetId;
+  switchSocialWallTab('messenger');
+}
+
+async function loadSwMessengerData() {
+  const user = getCurrentSocialUser();
+  try {
+    const [dataRes, chatRes] = await Promise.all([
+      fetch('/api/data'),
+      fetch('/api/chat/' + encodeURIComponent(user.id))
+    ]);
+    const mainData = await dataRes.json();
+    const chatData = await chatRes.json();
+
+    const students = (mainData.students || []).filter(s => s.id !== user.id);
+    swChatState.contacts = [
+      { id: 'KASIR01', name: 'Kasir myKantin', sub: 'Tanya jajan & konfirmasi deposit', isKasir: true },
+      ...students.map(s => ({ id: s.id, name: s.name, sub: `${s.id} • ${s.kelas || s.class || 'Siswa'}`, isKasir: false }))
+    ];
+    swChatState.groups = chatData.groups || [];
+    swChatState.messages = chatData.messages || [];
+
+    renderSwContacts();
+    renderSwMessages();
+  } catch (e) {
+    console.error('Gagal memuat Messenger:', e);
+  }
+}
+
+function renderSwContacts() {
+  const listEl = document.getElementById('swContactsList');
+  if (!listEl) return;
+  const q = (document.getElementById('swMsgSearch')?.value || '').toLowerCase();
+
+  const filteredContacts = swChatState.contacts.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q));
+  const filteredGroups = swChatState.groups.filter(g => (g.name || '').toLowerCase().includes(q));
+
+  let htmlOut = `<p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-2 pt-1">Kontak & Kasir</p>`;
+  htmlOut += filteredContacts.map(c => {
+    const active = swChatState.activeTargetType === 'direct' && swChatState.activeTargetId === c.id;
+    return `
+      <button type="button" onclick="selectSwTarget('direct', '${c.id}', '${c.name.replace(/'/g, '')}', '${c.sub.replace(/'/g, '')}')" class="w-full flex items-center gap-2.5 p-2.5 rounded-2xl text-left transition cursor-pointer ${active ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-white text-slate-800'}">
+        <div class="w-8 h-8 rounded-full ${c.isKasir ? 'bg-amber-500 text-white' : (active ? 'bg-white text-blue-700' : 'bg-blue-100 text-blue-700')} font-black text-[11px] flex items-center justify-center shrink-0">
+          ${c.name.slice(0, 2).toUpperCase()}
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-extrabold truncate">${c.name}</p>
+          <p class="text-[10px] truncate ${active ? 'text-blue-100' : 'text-slate-400'}">${c.sub}</p>
+        </div>
+      </button>
+    `;
+  }).join('');
+
+  if (filteredGroups.length > 0) {
+    htmlOut += `<p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-2 pt-3">Grup Obrolan</p>`;
+    htmlOut += filteredGroups.map(g => {
+      const active = swChatState.activeTargetType === 'group' && swChatState.activeTargetId === g.id;
+      return `
+        <button type="button" onclick="selectSwTarget('group', '${g.id}', '${(g.name || 'Grup').replace(/'/g, '')}', 'Grup Obrolan Kelas / Jajan')" class="w-full flex items-center gap-2.5 p-2.5 rounded-2xl text-left transition cursor-pointer ${active ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-white text-slate-800'}">
+          <div class="w-8 h-8 rounded-full bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shrink-0">GR</div>
+          <div class="min-w-0">
+            <p class="text-xs font-extrabold truncate">${g.name}</p>
+            <p class="text-[10px] truncate ${active ? 'text-blue-100' : 'text-slate-400'}">Grup Jajan</p>
+          </div>
+        </button>
+      `;
+    }).join('');
+  }
+
+  listEl.innerHTML = htmlOut;
+}
+
+function selectSwTarget(type, id, name, sub) {
+  swChatState.activeTargetType = type;
+  swChatState.activeTargetId = id;
+  swChatState.activeTargetName = name;
+  swChatState.activeTargetSub = sub;
+  renderSwContacts();
+  renderSwMessages();
+}
+
+function renderSwMessages() {
+  const user = getCurrentSocialUser();
+  document.getElementById('swActiveName').textContent = swChatState.activeTargetName;
+  document.getElementById('swActiveSub').textContent = '● ' + swChatState.activeTargetSub;
+  document.getElementById('swActiveAvatar').textContent = swChatState.activeTargetName.slice(0, 2).toUpperCase();
+
+  const box = document.getElementById('swMessagesBox');
+  if (!box) return;
+
+  const filtered = swChatState.messages.filter(m => {
+    if (swChatState.activeTargetType === 'group') {
+      return m.group_id === swChatState.activeTargetId;
+    }
+    return !m.group_id && (
+      (m.sender_id === user.id && m.receiver_id === swChatState.activeTargetId) ||
+      (m.sender_id === swChatState.activeTargetId && m.receiver_id === user.id)
+    );
+  });
+
+  if (filtered.length === 0) {
+    box.innerHTML = `<p class="text-center text-slate-400 py-10">Belum ada pesan dengan ${swChatState.activeTargetName}. Mulai sapa sekarang!</p>`;
+    return;
+  }
+
+  box.innerHTML = filtered.map(m => {
+    const isMe = m.sender_id === user.id;
+    return `
+      <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+        <div class="max-w-[78%] px-3.5 py-2 rounded-2xl shadow-sm ${isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white text-slate-800 border border-slate-200/80 rounded-bl-sm'}">
+          ${(!isMe && swChatState.activeTargetType === 'group') ? `<p class="text-[10px] font-extrabold text-blue-600 mb-0.5">${m.sender_name || m.sender_id}</p>` : ''}
+          <p class="leading-relaxed">${m.message || m.content || ''}</p>
+        </div>
+        <span class="text-[9px] text-slate-400 mt-0.5 px-1">${m.created_at || ''}</span>
+      </div>
+    `;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendSwDirectMessage(e) {
+  e.preventDefault();
+  const user = getCurrentSocialUser();
+  const input = document.getElementById('swMessageInput');
+  if (!input || !input.value.trim()) return;
+
+  const payload = {
+    senderId: user.id,
+    senderName: user.name,
+    receiverId: swChatState.activeTargetType === 'direct' ? swChatState.activeTargetId : null,
+    groupId: swChatState.activeTargetType === 'group' ? swChatState.activeTargetId : null,
+    message: input.value.trim()
+  };
+
+  await fetch('/api/chat/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  input.value = '';
+  await loadSwMessengerData();
+}
+
+async function createSwChatGroup() {
+  const user = getCurrentSocialUser();
+  const name = prompt('Nama Grup Obrolan Baru (misal: Geng Jajan XII IPA 1):');
+  if (!name || !name.trim()) return;
+  await fetch('/api/chat/groups', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name.trim(), creatorId: user.id })
+  });
+  await loadSwMessengerData();
+}
+
+async function clearSwChatHistory() {
+  const user = getCurrentSocialUser();
+  if (!confirm('Hapus riwayat obrolan di layar ini?')) return;
+  await fetch('/api/chat/clear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId: user.id,
+      targetId: swChatState.activeTargetType === 'direct' ? swChatState.activeTargetId : null,
+      groupId: swChatState.activeTargetType === 'group' ? swChatState.activeTargetId : null
+    })
+  });
+  await loadSwMessengerData();
+}
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script id="mykantinSafeHeaderMove">
+(function() {
+  function syncTopBar() {
+    const akunBadge = Array.from(document.querySelectorAll('span, div')).find(
+      el => el.children.length === 0 && el.textContent && el.textContent.trim().toUpperCase() === 'AKUN SISWA'
+    );
+    const logoutBtn = Array.from(document.querySelectorAll('button')).find(
+      b => b.textContent && b.textContent.toLowerCase().includes('keluar') && b.offsetParent !== null
+    );
+    const siapText = Array.from(document.querySelectorAll('span, div, label')).find(
+      el => el.textContent && el.textContent.trim().toLowerCase().startsWith('siap jastip') && el.offsetParent !== null
+    );
+
+    if (!akunBadge || !siapText) return;
+
+    // 1. Rapikan sisi kiri: myKantin -> AKUN SISWA -> Keluar (tanpa duplikasi nama/kelas)
+    const leftGroup = akunBadge.parentElement;
+    leftGroup.style.display = 'inline-flex';
+    leftGroup.style.alignItems = 'center';
+    leftGroup.style.flexWrap = 'nowrap';
+    leftGroup.style.gap = '8px';
+
+    if (logoutBtn && !logoutBtn.dataset.movedLeftFinal) {
+      logoutBtn.dataset.movedLeftFinal = '1';
+      logoutBtn.style.margin = '0';
+      logoutBtn.style.padding = '3px 10px';
+      logoutBtn.style.fontSize = '11px';
+      logoutBtn.style.whiteSpace = 'nowrap';
+      akunBadge.insertAdjacentElement('afterend', logoutBtn);
+    }
+
+    // Cari common ancestor bar header penuh
+    let fullBar = leftGroup.parentElement;
+    while (fullBar && fullBar !== document.body && !fullBar.contains(siapText)) {
+      fullBar = fullBar.parentElement;
+    }
+    if (!fullBar || fullBar === document.body) return;
+
+    // Sembunyikan blok Nama Siswa & Kelas yang ada di bar header atas
+    Array.from(fullBar.querySelectorAll('div')).forEach(d => {
+      if (
+        d !== leftGroup &&
+        !d.contains(akunBadge) &&
+        !d.contains(siapText) &&
+        d.textContent &&
+        (d.textContent.includes('IPA') || d.textContent.includes('IPS') || d.textContent.includes('SIS0')) &&
+        d.children.length >= 2 &&
+        !d.textContent.toLowerCase().includes('siap jastip')
+      ) {
+        d.style.display = 'none';
+      }
+    });
+
+    // 2. Temukan kapsul "Siap Jastip"
+    let siapPill = siapText.parentElement;
+    while (siapPill && siapPill !== fullBar) {
+      if (siapPill.querySelector('input[type="checkbox"], button, [role="switch"]')) break;
+      siapPill = siapPill.parentElement;
+    }
+    if (!siapPill || siapPill === fullBar) siapPill = siapText.parentElement;
+
+    // 3. Buat kapsul "DOMPET JASTIP" & sembunyikan kartu besar bawah
+    let miniPill = document.getElementById('headerJastipMiniPill');
+    if (!miniPill) {
+      const cairBtn = Array.from(document.querySelectorAll('button')).find(
+        b => b.textContent && b.textContent.trim().toLowerCase().includes('cairkan')
+      );
+      let jastipCard = cairBtn ? cairBtn.parentElement : null;
+      while (jastipCard && jastipCard !== document.body) {
+        if (jastipCard.textContent.toUpperCase().includes('DOMPET UANG JAJAN')) break;
+        jastipCard = jastipCard.parentElement;
+      }
+
+      const rpNode = jastipCard
+        ? Array.from(jastipCard.querySelectorAll('div, span, p, h2, h3')).find(el => el.children.length === 0 && el.textContent.trim().startsWith('Rp'))
+        : null;
+
+      miniPill = document.createElement('div');
+      miniPill.id = 'headerJastipMiniPill';
+      miniPill.style.cssText = 'display:inline-flex; align-items:center; gap:8px; background:#ecfdf5; border:1px solid #a7f3d0; padding:3px 6px 3px 10px; border-radius:9999px; flex-shrink:0; white-space:nowrap;';
+
+      const textCol = document.createElement('div');
+      textCol.style.cssText = 'display:flex; flex-direction:column; line-height:1.1; text-align:left;';
+
+      const titleTiny = document.createElement('span');
+      titleTiny.textContent = 'DOMPET JASTIP';
+      titleTiny.style.cssText = 'font-size:8px; font-weight:800; color:#059669; letter-spacing:0.03em;';
+
+      const amountEl = rpNode || document.createElement('span');
+      if (!rpNode) amountEl.textContent = 'Rp 0';
+      amountEl.style.cssText = 'font-size:12px; font-weight:900; color:#064e3b; margin:0; line-height:1.15;';
+
+      textCol.appendChild(titleTiny);
+      textCol.appendChild(amountEl);
+
+      const actionBtn = cairBtn || document.createElement('button');
+      if (!cairBtn) {
+        actionBtn.type = 'button';
+        actionBtn.textContent = 'Cairkan';
+        actionBtn.onclick = function() {
+          if (typeof openCairkanJastipModal === 'function') openCairkanJastipModal();
+          else if (typeof cairkanJastip === 'function') cairkanJastip();
+          else alert('Saldo Dompet Jastip Rp 0 — belum ada dana yang bisa dicairkan.');
+        };
+      }
+      actionBtn.style.cssText = 'background:#10b981; color:#ffffff; font-size:10px; font-weight:800; padding:4px 10px; border-radius:9999px; display:inline-flex; align-items:center; gap:4px; border:none; cursor:pointer; box-shadow:0 2px 5px rgba(16,185,129,0.28); white-space:nowrap;';
+
+      miniPill.appendChild(textCol);
+      miniPill.appendChild(actionBtn);
+
+      if (jastipCard && jastipCard !== document.body) {
+        const gridRow = jastipCard.parentElement;
+        jastipCard.style.display = 'none';
+        if (gridRow) {
+          gridRow.classList.remove('md:grid-cols-2', 'sm:grid-cols-2', 'grid-cols-2');
+          gridRow.style.gridTemplateColumns = '1fr';
+        }
+      }
+    }
+
+    // 4. Susun sisi kanan: Siap Jastip + DOMPET JASTIP bersebelahan
+    fullBar.style.display = 'flex';
+    fullBar.style.alignItems = 'center';
+    fullBar.style.justifyContent = 'space-between';
+    fullBar.style.width = '100%';
+
+    let rightGroup = document.getElementById('headerRightJastipGroup');
+    if (!rightGroup) {
+      rightGroup = document.createElement('div');
+      rightGroup.id = 'headerRightJastipGroup';
+      rightGroup.style.cssText = 'display:inline-flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; white-space:nowrap;';
+      fullBar.appendChild(rightGroup);
+    }
+
+    siapPill.style.display = 'inline-flex';
+    siapPill.style.alignItems = 'center';
+    siapPill.style.margin = '0';
+    siapPill.style.whiteSpace = 'nowrap';
+    siapText.style.whiteSpace = 'nowrap';
+
+    if (siapPill.parentElement !== rightGroup) rightGroup.appendChild(siapPill);
+    if (miniPill.parentElement !== rightGroup) rightGroup.appendChild(miniPill);
+  }
+
+  setInterval(syncTopBar, 250);
+  document.addEventListener('DOMContentLoaded', syncTopBar);
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style id="mykantinFbLayoutStyles">
+  .mk-fb-sidebar {
+    position: fixed;
+    left: 20px;
+    top: 76px;
+    width: 245px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 8px 24px -6px rgba(15, 23, 42, 0.09);
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 45;
+  }
+  body.mk-has-sidebar .mk-fb-sidebar {
+    display: flex;
+  }
+  .mk-fb-sidebar-title {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    padding: 2px 10px 6px 10px;
+  }
+  .mk-fb-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.18s ease;
+    color: #334155;
+  }
+  .mk-fb-nav-item:hover {
+    background: #f1f5f9;
+  }
+  .mk-fb-nav-item.is-active {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  }
+  .mk-fb-nav-item.is-active.nav-orange {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.12);
+  }
+  .mk-fb-nav-item.is-active.nav-blue {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e40af;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
+  }
+  .mk-fb-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  @media (min-width: 960px) {
+    body.mk-has-sidebar .mk-shifted-dashboard {
+      margin-left: 280px !important;
+      margin-right: 24px !important;
+      max-width: calc(100% - 304px) !important;
+    }
+  }
+  @media (max-width: 959px) {
+    body.mk-has-sidebar .mk-fb-sidebar {
+      position: static;
+      width: auto;
+      margin: 10px 16px;
+      flex-direction: row;
+      overflow-x: auto;
+    }
+    .mk-fb-sidebar-title {
+      display: none;
+    }
+    .mk-fb-nav-item {
+      min-width: 170px;
+    }
+  }
+
+  /* Sembunyikan 3 banner tombol tengah */
+  body.mk-has-sidebar #btnAccPreorder,
+  body.mk-has-sidebar .mk-hide-banner {
+    display: none !important;
+  }
+
+  /* Pre-Order di tengah */
+  body.mk-has-sidebar:not(.mk-tab-preorder) #accPreorderContent {
+    display: none !important;
+  }
+  body.mk-has-sidebar.mk-tab-preorder #accPreorderContent {
+    display: grid !important;
+    grid-template-rows: 1fr !important;
+    max-height: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+
+  /* GoFood & Social Wall ditanam langsung di tengah halaman (bukan popup fixed) */
+  body.mk-has-sidebar:not(.mk-tab-gofood) #ecosystemHubModal {
+    display: none !important;
+  }
+  body.mk-has-sidebar.mk-tab-gofood #ecosystemHubModal {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    z-index: 1 !important;
+  }
+
+  body.mk-has-sidebar:not(.mk-tab-wallfeed) #socialWallModal {
+    display: none !important;
+  }
+  body.mk-has-sidebar.mk-tab-wallfeed #socialWallModal {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    z-index: 1 !important;
+  }
+
+  body.mk-has-sidebar #ecosystemHubModal > div,
+  body.mk-has-sidebar #socialWallModal > div {
+    position: static !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    height: auto !important;
+    margin: 0 !important;
+    border-radius: 18px !important;
+    box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.08) !important;
+  }
+</style>
+
+<aside id="mkFbSidebar" class="mk-fb-sidebar">
+  <div class="mk-fb-sidebar-title">Menu Kantin</div>
+  <button type="button" id="mkNav_home" class="mk-fb-nav-item is-active">
+    <div class="mk-fb-icon" style="background:#f1f5f9; color:#0f172a;">&#127968;</div>
+    <div>
+      <div style="font-size:13px; font-weight:800; line-height:1.2;">Beranda Dasbor</div>
+      <div style="font-size:10.5px; color:#64748b;">Saldo &amp; riwayat jajan</div>
+    </div>
+  </button>
+  <button type="button" id="mkNav_preorder" class="mk-fb-nav-item">
+    <div class="mk-fb-icon" style="background:#d1fae5; color:#059669;">&#129377;</div>
+    <div>
+      <div style="font-size:13px; font-weight:800; line-height:1.2;">Pre-Order Kantin</div>
+      <div style="font-size:10.5px; color:#64748b;">Pesan dulu tanpa antre</div>
+    </div>
+  </button>
+  <button type="button" id="mkNav_gofood" class="mk-fb-nav-item nav-orange">
+    <div class="mk-fb-icon" style="background:#ffedd5; color:#ea580c;">&#128757;</div>
+    <div>
+      <div style="display:flex; align-items:center; gap:5px;">
+        <span style="font-size:13px; font-weight:800; line-height:1.2;">Pesan Kantin &amp; Jastip</span>
+        <span style="background:#ea580c; color:#fff; font-size:8px; font-weight:900; padding:1px 5px; border-radius:9999px;">BARU</span>
+      </div>
+      <div style="font-size:10.5px; color:#64748b;">Stan kantin &amp; titip teman</div>
+    </div>
+  </button>
+  <button type="button" id="mkNav_wallfeed" class="mk-fb-nav-item nav-blue">
+    <div class="mk-fb-icon" style="background:#dbeafe; color:#2563eb;">&#128240;</div>
+    <div>
+      <div style="font-size:13px; font-weight:800; line-height:1.2;">Beranda Sosial Kantin</div>
+      <div style="font-size:10.5px; color:#64748b;">Wall feed &amp; info promo</div>
+    </div>
+  </button>
+</aside>
+
+<script id="mykantinFbLayoutScript">
+(function() {
+  let currentTab = 'home';
+
+  function findLeaf(substr) {
+    const all = document.querySelectorAll('button, div, span, p, h1, h2, h3, h4');
+    for (let i = 0; i < all.length; i++) {
+      const el = all[i];
+      if (el.closest('#mkFbSidebar') || el.closest('#mkInlineStage')) continue;
+      const t = (el.textContent || '').trim();
+      if (!t.toLowerCase().includes(substr.toLowerCase())) continue;
+      const childHas = Array.from(el.children).some(c => (c.textContent || '').includes(substr));
+      if (!childHas) return el;
+    }
+    return null;
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.body.classList.remove('mk-tab-home', 'mk-tab-preorder', 'mk-tab-gofood', 'mk-tab-wallfeed');
+    document.body.classList.add('mk-tab-' + tab);
+
+    ['home', 'preorder', 'gofood', 'wallfeed'].forEach(id => {
+      const el = document.getElementById('mkNav_' + id);
+      if (el) el.classList.toggle('is-active', id === tab);
+    });
+
+    if (tab === 'preorder') {
+      if (typeof window.toggleAccordion === 'function') window.toggleAccordion('preorder', true);
+      const acc = document.getElementById('accPreorderContent');
+      if (acc) acc.classList.add('open');
+    } else if (tab === 'gofood') {
+      if (typeof window.openEcosystemHub === 'function') {
+        window.openEcosystemHub('explore');
+      }
+      const eco = document.getElementById('ecosystemHubModal');
+      if (eco) eco.classList.remove('hidden', 'fixed', 'inset-0');
+    } else if (tab === 'wallfeed') {
+      const fnName = "openSocialWallModal";
+      if (fnName && typeof window[fnName] === 'function') {
+        window[fnName]();
+      } else {
+        const feedBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Buka Feed'));
+        if (feedBtn) feedBtn.click();
+      }
+      const wall = document.getElementById('socialWallModal');
+      if (wall) wall.classList.remove('hidden', 'fixed', 'inset-0');
+    }
+  }
+
+  document.getElementById('mkNav_home').addEventListener('click', function() { switchTab('home'); });
+  document.getElementById('mkNav_preorder').addEventListener('click', function() { switchTab('preorder'); });
+  document.getElementById('mkNav_gofood').addEventListener('click', function() { switchTab('gofood'); });
+  document.getElementById('mkNav_wallfeed').addEventListener('click', function() { switchTab('wallfeed'); });
+
+  function syncFbSidebar() {
+    const keluarBtn = Array.from(document.querySelectorAll('button')).find(
+      b => b.textContent.includes('Keluar') && b.offsetWidth > 0 && b.offsetHeight > 0
+    );
+    const siapJastipEl = findLeaf('Siap Jastip');
+    const isSiswa = Boolean(keluarBtn && siapJastipEl && siapJastipEl.offsetWidth > 0);
+
+    document.body.classList.toggle('mk-has-sidebar', isSiswa);
+    if (!isSiswa) return;
+
+    if (!document.body.classList.contains('mk-tab-home') &&
+        !document.body.classList.contains('mk-tab-preorder') &&
+        !document.body.classList.contains('mk-tab-gofood') &&
+        !document.body.classList.contains('mk-tab-wallfeed')) {
+      switchTab('home');
+    }
+
+    const saldoEl = findLeaf('SALDO DOMPET MYKANTIN');
+    if (!saldoEl) return;
+
+    let dashContainer = saldoEl.parentElement;
+    while (dashContainer && dashContainer.parentElement !== document.body) {
+      if (dashContainer.offsetWidth >= 480 && !dashContainer.querySelector('header')) {
+        const p = dashContainer.parentElement;
+        if (p && p !== document.body && !p.querySelector('header') && p.offsetWidth >= dashContainer.offsetWidth) {
+          dashContainer = p;
+        }
+        dashContainer.classList.add('mk-shifted-dashboard');
+        break;
+      }
+      dashContainer = dashContainer.parentElement;
+    }
+
+    // Tandai pembungkus luar banner biru & oranye agar terkunci tersembunyi permanen
+    Array.from(document.querySelectorAll('div, button')).forEach(el => {
+      if (el.closest('#mkFbSidebar') || el.closest('#mkInlineStage')) return;
+      const txt = (el.textContent || '');
+      if (txt.includes('SALDO DOMPET MYKANTIN')) return;
+      if ((txt.includes('Beranda Sosial Kantin (Wall Feed)') && txt.includes('Buka Feed')) ||
+          (txt.includes('Pesan Kantin (GoFood) & Jastip Sosial') && txt.includes('Jelajahi stan kantin'))) {
+        if (el.offsetHeight > 0 && el.offsetHeight < 160) {
+          el.classList.add('mk-banner-hidden-forever');
+        }
+      }
+    });
+
+    // Sembunyikan ketiga banner tombol tengah
+    const btnPre = document.getElementById('btnAccPreorder');
+    if (btnPre) btnPre.classList.add('mk-hide-banner');
+
+    const ecoBtn = document.querySelector('button[onclick*="openEcosystemHub"]');
+    if (ecoBtn) {
+      ecoBtn.classList.add('mk-hide-banner');
+      if (ecoBtn.parentElement && ecoBtn.parentElement.className && ecoBtn.parentElement.className.includes('grid')) {
+        ecoBtn.parentElement.classList.add('mk-hide-banner');
+      }
+    }
+
+    const feedBtn = Array.from(document.querySelectorAll('button')).find(
+      b => !b.closest('#mkFbSidebar') && b.textContent.includes('Buka Feed')
+    );
+    if (feedBtn) {
+      feedBtn.classList.add('mk-hide-banner');
+      if (feedBtn.parentElement && feedBtn.parentElement.children.length === 1) {
+        feedBtn.parentElement.classList.add('mk-hide-banner');
+      }
+    }
+
+    let stage = document.getElementById('mkInlineStage');
+    if (!stage) {
+      const accPreOrig = document.getElementById('accPreorderContent');
+      const statusLeaf = Array.from(document.querySelectorAll('h1, h2, h3, h4, div, span, p')).find(
+        el => !el.closest('#mkFbSidebar') && (el.textContent || '').trim().toLowerCase() === 'status pre-order anda'
+      );
+      if (accPreOrig && accPreOrig.parentElement) {
+        stage = document.createElement('div');
+        stage.id = 'mkInlineStage';
+        stage.style.marginTop = '14px';
+        stage.style.marginBottom = '14px';
+        accPreOrig.insertAdjacentElement('beforebegin', stage);
+      } else if (statusLeaf) {
+        let statusCard = statusLeaf.parentElement;
+        while (statusCard && statusCard.parentElement !== document.body) {
+          if (statusCard.parentElement && (statusCard.parentElement.textContent || '').toUpperCase().includes('SALDO DOMPET MYKANTIN')) {
+            break;
+          }
+          statusCard = statusCard.parentElement;
+        }
+        if (statusCard && statusCard.parentElement) {
+          stage = document.createElement('div');
+          stage.id = 'mkInlineStage';
+          stage.style.marginTop = '14px';
+          stage.style.marginBottom = '14px';
+          statusCard.insertAdjacentElement('beforebegin', stage);
+        }
+      }
+    }
+
+    if (!stage) return;
+
+    const accPre = document.getElementById('accPreorderContent');
+    if (accPre && accPre.parentElement !== stage) {
+      stage.appendChild(accPre);
+    }
+
+    const ecoModal = document.getElementById('ecosystemHubModal');
+    if (ecoModal) {
+      if (ecoModal.parentElement !== stage) stage.appendChild(ecoModal);
+      if (currentTab === 'gofood') ecoModal.classList.remove('hidden', 'fixed', 'inset-0');
+    }
+
+    const wallModal = document.getElementById('socialWallModal');
+    if (wallModal) {
+      if (wallModal.parentElement !== stage) stage.appendChild(wallModal);
+      if (currentTab === 'wallfeed') wallModal.classList.remove('hidden', 'fixed', 'inset-0');
+    }
+
+    [accPre, ecoModal, wallModal].forEach(panel => {
+      if (!panel) return;
+      const closeBtn = Array.from(panel.querySelectorAll('button')).find(b => {
+        const t = b.textContent.trim();
+        return (t === 'X' || t === 'x' || t === '\u2715' || t === '\u00d7' || t.includes('Tutup')) && !b.dataset.mkBoundClose;
+      });
+      if (closeBtn) {
+        closeBtn.dataset.mkBoundClose = '1';
+        closeBtn.removeAttribute('onclick');
+        closeBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          switchTab('home');
+        });
+      }
+    });
+  }
+
+  setInterval(syncFbSidebar, 200);
+  document.addEventListener('DOMContentLoaded', syncFbSidebar);
+})();
+</script>
 
 </body>
 </html>
